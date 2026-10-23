@@ -292,7 +292,7 @@ struct ProfilePage {
       .layoutWeight(1)
       .scrollBar(BarState.Off)
 
-      BottomNavBar({ activeTab: 1 })
+      BottomNavBar({ activeTab: 2 })
     }
     .width('100%')
     .height('100%')

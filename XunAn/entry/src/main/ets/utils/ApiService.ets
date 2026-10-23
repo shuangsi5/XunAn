@@ -410,6 +410,25 @@ export async function updateUserProfile(
   return result.success === true;
 }
 
+// ===================== AI 对话 =====================
+export interface ChatMessageItem {
+  role: string;
+  content: string;
+}
+
+interface AiChatResponse {
+  content: string;
+}
+
+export async function chatWithAi(messages: ChatMessageItem[]): Promise<string> {
+  const result: ApiResponse = await post('/ai/chat', { messages: messages });
+  if (result.success === true && result.data) {
+    const data = result.data as AiChatResponse;
+    return data.content || '';
+  }
+  return '';
+}
+
 // ===================== 登录会话持久化 =====================
 export function setLoggedInPhone(phone: string): void {
   AppStorage.setOrCreate(LOGGED_IN_PHONE_KEY, phone);

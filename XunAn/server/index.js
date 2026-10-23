@@ -6,6 +6,7 @@ const sosRoutes = require('./routes/sos');
 const rescuerRoutes = require('./routes/rescuer');
 const profileRoutes = require('./routes/profile');
 const uploadRoutes = require('./routes/upload');
+const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use('/api/sos', sosRoutes);
 app.use('/api/rescuers', rescuerRoutes);
 app.use('/api/user', profileRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
