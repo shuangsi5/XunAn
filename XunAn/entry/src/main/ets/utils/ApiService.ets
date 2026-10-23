@@ -420,8 +420,13 @@ interface AiChatResponse {
   content: string;
 }
 
+interface ChatRequestBody {
+  messages: ChatMessageItem[];
+}
+
 export async function chatWithAi(messages: ChatMessageItem[]): Promise<string> {
-  const result: ApiResponse = await post('/ai/chat', { messages: messages });
+  const body: ChatRequestBody = { messages: messages };
+  const result: ApiResponse = await post('/ai/chat', body);
   if (result.success === true && result.data) {
     const data = result.data as AiChatResponse;
     return data.content || '';

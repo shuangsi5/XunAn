@@ -32,7 +32,7 @@ export class BottomNavBar extends ViewPU {
         SubscriberManager.Get().delete(this.id__());
         this.aboutToBeDeletedInternal();
     }
-    // 当前激活的标签：0 = 汛安(主页)，1 = 个人中心
+    // 当前激活的标签：0 = 汛安(主页)，1 = AI助手，2 = 个人中心
     private __activeTab: SynchedPropertySimpleOneWayPU<number>;
     get activeTab() {
         return this.__activeTab.get();
@@ -44,11 +44,17 @@ export class BottomNavBar extends ViewPU {
         if (this.activeTab === 0) {
             return;
         }
-        // 从个人中心返回身份主页
+        // 从其它页返回身份主页
         router.back();
     }
-    goProfile() {
+    goAiChat() {
         if (this.activeTab === 1) {
+            return;
+        }
+        router.pushUrl({ url: 'pages/AiChatPage' });
+    }
+    goProfile() {
+        if (this.activeTab === 2) {
             return;
         }
         router.pushUrl({ url: 'pages/ProfilePage' });
@@ -88,6 +94,32 @@ export class BottomNavBar extends ViewPU {
         // 汛安（主页）
         Column.pop();
         this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // AI 助手
+            Column.create({ space: 2 });
+            // AI 助手
+            Column.layoutWeight(1);
+            // AI 助手
+            Column.height('100%');
+            // AI 助手
+            Column.justifyContent(FlexAlign.Center);
+            // AI 助手
+            Column.onClick(() => this.goAiChat());
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('🤖');
+            Text.fontSize(22);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('AI助手');
+            Text.fontSize(11);
+            Text.fontWeight(this.activeTab === 1 ? FontWeight.Medium : FontWeight.Normal);
+            Text.fontColor(this.activeTab === 1 ? AppColors.primary : AppColors.textTertiary);
+        }, Text);
+        Text.pop();
+        // AI 助手
+        Column.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
             // 个人中心
             Column.create({ space: 2 });
             // 个人中心
@@ -107,8 +139,8 @@ export class BottomNavBar extends ViewPU {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Text.create('个人中心');
             Text.fontSize(11);
-            Text.fontWeight(this.activeTab === 1 ? FontWeight.Medium : FontWeight.Normal);
-            Text.fontColor(this.activeTab === 1 ? AppColors.primary : AppColors.textTertiary);
+            Text.fontWeight(this.activeTab === 2 ? FontWeight.Medium : FontWeight.Normal);
+            Text.fontColor(this.activeTab === 2 ? AppColors.primary : AppColors.textTertiary);
         }, Text);
         Text.pop();
         // 个人中心

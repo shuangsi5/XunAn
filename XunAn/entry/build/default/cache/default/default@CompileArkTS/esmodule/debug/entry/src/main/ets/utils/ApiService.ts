@@ -323,6 +323,26 @@ export async function updateUserProfile(phone: string, name: string, password: s
     const result: ApiResponse = await put(`/user/${phone}`, body);
     return result.success === true;
 }
+// ===================== AI 对话 =====================
+export interface ChatMessageItem {
+    role: string;
+    content: string;
+}
+interface AiChatResponse {
+    content: string;
+}
+interface ChatRequestBody {
+    messages: ChatMessageItem[];
+}
+export async function chatWithAi(messages: ChatMessageItem[]): Promise<string> {
+    const body: ChatRequestBody = { messages: messages };
+    const result: ApiResponse = await post('/ai/chat', body);
+    if (result.success === true && result.data) {
+        const data = result.data as AiChatResponse;
+        return data.content || '';
+    }
+    return '';
+}
 // ===================== 登录会话持久化 =====================
 export function setLoggedInPhone(phone: string): void {
     AppStorage.setOrCreate(LOGGED_IN_PHONE_KEY, phone);

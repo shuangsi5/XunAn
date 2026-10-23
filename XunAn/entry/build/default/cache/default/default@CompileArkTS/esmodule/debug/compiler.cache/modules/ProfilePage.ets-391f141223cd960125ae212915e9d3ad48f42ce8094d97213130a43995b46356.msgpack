@@ -565,18 +565,18 @@ class ProfilePage extends ViewPU {
         {
             this.observeComponentCreation2((elmtId, isInitialRender) => {
                 if (isInitialRender) {
-                    let componentCall = new BottomNavBar(this, { activeTab: 1 }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ProfilePage.ets", line: 295, col: 7 });
+                    let componentCall = new BottomNavBar(this, { activeTab: 2 }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ProfilePage.ets", line: 295, col: 7 });
                     ViewPU.create(componentCall);
                     let paramsLambda = () => {
                         return {
-                            activeTab: 1
+                            activeTab: 2
                         };
                     };
                     componentCall.paramsGenerator_ = paramsLambda;
                 }
                 else {
                     this.updateStateVarsOfChildByElmtId(elmtId, {
-                        activeTab: 1
+                        activeTab: 2
                     });
                 }
             }, { name: "BottomNavBar" });
@@ -591,7 +591,7 @@ class ProfilePage extends ViewPU {
     }
 }
 registerNamedRoute(() => new ProfilePage(undefined, {}), "", { bundleName: "com.xunan.floodrescue", moduleName: "entry", pagePath: "pages/ProfilePage", pageFullPath: "entry/src/main/ets/pages/ProfilePage", integratedHsp: "false", moduleType: "followWithHap" });
-//# sourceMappingURL=ProfilePage.js.mapÂ–ÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsÙV hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.file.picker.d.tsÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsÙ^C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsÙXC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\pages\ProfilePage.etsÔrBšªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¥entryÃÂÙ5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÙ/C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn¥entry¥1.0.0Ô  Ù5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÃÃÚ(%import { router, promptAction } from '@kit.ArkUI';
+//# sourceMappingURL=ProfilePage.js.mapÂ–Ù_ hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsÙe hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsÙd hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.file.picker.d.tsÙ>E:\develop\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsÙEE:\develop\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsÙ:E:\develop\XunAn\XunAn\entry\src\main\ets\common\Theme.etsÙ?E:\develop\XunAn\XunAn\entry\src\main\ets\pages\ProfilePage.etsÔrBšªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¥entryÃÂ¼E:\develop\XunAn\XunAn\entry¶E:\develop\XunAn\XunAn¥entry¥1.0.0Ô  ¼E:\develop\XunAn\XunAn\entryÃÃÚ(%import { router, promptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import picker from '@ohos.file.picker';
 import { Role } from '../model/Role';
@@ -885,14 +885,14 @@ struct ProfilePage {
       .layoutWeight(1)
       .scrollBar(BarState.Off)
 
-      BottomNavBar({ activeTab: 1 })
+      BottomNavBar({ activeTab: 2 })
     }
     .width('100%')
     .height('100%')
     .backgroundColor(AppColors.bg)
   }
 }
-ÀÔrC–¬@ohos.router²@ohos.promptAction±@ohos.file.picker³../utils/ApiService¯../common/Themeº../components/BottomNavBarÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsAÃªoh-resolveÂDAÃÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsAÃªoh-resolveÂDAÃÙV hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.file.picker.d.tsAÃªoh-resolveÂDAÂÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsAÃªoh-resolveÂDAÂÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsAÃªoh-resolveÂDAÂÙ^C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsAÃªoh-resolveÂ“ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings®ProfilePage.js ‘¯ProfilePage.etsÜI–”    ”  	”  ”  %”!  1”"  2–”    ”  ”  ”  %”-  1”.  2–”   ” ” ” ”& &”' 'Ü ”   ” ”	 	” ” ”) )”+ +”8 8”: :”ÌE ÌE”ÌG ÌG”ÌX ÌX”ÌZ ÌZ”Ì` Ì`”Ìu Ìu”Ìv Ìv˜”   ” ”	 	” ” ” ”9 9”: :š”   ” ”	 	” ” ”   ”" "”( (”9 9”: :•”   ”	 	” ” ”  ˜” 	” 	” 	” 	” 	” 	” 	” 	Ü ” 
+ÀÔrC–¬@ohos.router²@ohos.promptAction±@ohos.file.picker³../utils/ApiServiceº../components/BottomNavBar¯../common/ThemeÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙ_ hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsAÃªoh-resolveÂDAÃÙe hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsAÃªoh-resolveÂDAÃÙd hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.file.picker.d.tsAÃªoh-resolveÂDAÂÙ>E:\develop\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsAÃªoh-resolveÂDAÂÙEE:\develop\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsAÃªoh-resolveÂDAÂÙ:E:\develop\XunAn\XunAn\entry\src\main\ets\common\Theme.etsAÃªoh-resolveÂ“ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings®ProfilePage.js ‘¯ProfilePage.etsÜI–”    ”  	”  ”  %”!  1”"  2–”    ”  ”  ”  %”-  1”.  2–”   ” ” ” ”& &”' 'Ü ”   ” ”	 	” ” ”) )”+ +”8 8”: :”ÌE ÌE”ÌG ÌG”ÌX ÌX”ÌZ ÌZ”Ì` Ì`”Ìu Ìu”Ìv Ìv˜”   ” ”	 	” ” ” ”9 9”: :š”   ” ”	 	” ” ”   ”" "”( (”9 9”: :•”   ”	 	” ” ”  ˜” 	” 	” 	” 	” 	” 	” 	” 	Ü ” 
 ” 
 ” 
 ” 

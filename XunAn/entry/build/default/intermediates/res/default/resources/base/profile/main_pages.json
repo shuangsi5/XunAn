@@ -9,6 +9,7 @@
     "pages/MapPage",
     "pages/SOSDetailPage",
     "pages/ProfilePage",
-    "pages/EditProfilePage"
+    "pages/EditProfilePage",
+    "pages/AiChatPage"
   ]
 }

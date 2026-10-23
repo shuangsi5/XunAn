@@ -579,18 +579,18 @@ class ProfilePage extends ViewPU {
         {
             this.observeComponentCreation2((elmtId, isInitialRender) => {
                 if (isInitialRender) {
-                    let componentCall = new BottomNavBar(this, { activeTab: 1 }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ProfilePage.ets", line: 295, col: 7 });
+                    let componentCall = new BottomNavBar(this, { activeTab: 2 }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/ProfilePage.ets", line: 295, col: 7 });
                     ViewPU.create(componentCall);
                     let paramsLambda = () => {
                         return {
-                            activeTab: 1
+                            activeTab: 2
                         };
                     };
                     componentCall.paramsGenerator_ = paramsLambda;
                 }
                 else {
                     this.updateStateVarsOfChildByElmtId(elmtId, {
-                        activeTab: 1
+                        activeTab: 2
                     });
                 }
             }, { name: "BottomNavBar" });
