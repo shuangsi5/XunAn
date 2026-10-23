@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"E:\\\\develop\\\\XunAn\\\\entry\" -Recurse -File | Where-Object { $_.FullName -notmatch 'node_modules|\\\\.hvigor|build' } | Select-Object FullName, Length | Format-Table -AutoSize)",
+      "PowerShell(node --version 2>$null; if \\(-not $?\\) { \"node not found\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://47.110.87.84:3000/api/sos\" -UseBasicParsing -TimeoutSec 15; $r.Content } catch { \"ERROR: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://47.110.87.84:3000/api/rescuers\" -UseBasicParsing -TimeoutSec 15; $r.Content } catch { \"ERROR: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\develop\\\\XunAn\\\\XunAn\\\\entry\\\\src\\\\main\" -File -Recurse | Where-Object { $_.FullName -notmatch 'ets' } | Select-Object FullName, Length)",
+      "WebSearch",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\Huawei\", \"C:\\\\Users\\\\22274\\\\AppData\\\\Local\\\\Huawei\", \"C:\\\\Users\\\\22274\\\\AppData\\\\Local\\\\OpenHarmony\", \"C:\\\\Users\\\\22274\\\\AppData\\\\Roaming\\\\Huawei\", \"D:\\\\\", \"E:\\\\\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"=== $p ===\"; Get-ChildItem -Path $p -Directory -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName } })",
+      "PowerShell(Select-String *)",
+      "PowerShell($f = \"E:\\\\DevEco_Studio\\\\DevEco Studio\\\\sdk\\\\default\\\\openharmony\\\\ets\\\\api\\\\@ohos.net.http.d.ts\"; if \\(Test-Path $f\\) { Select-String -Path $f -Pattern \"expectDataType|HttpDataType|result:|interface HttpResponse\" | Select-Object -First 30 | ForEach-Object { \"L$\\($_.LineNumber\\): $\\($_.Line.Trim\\(\\)\\)\" } } else { \"not found\" })",
+      "PowerShell(Get-ChildItem *)",
+      "WebFetch(domain:developer.huawei.com)",
+      "PowerShell($f = Get-ChildItem -Path \"E:\\\\DevEco_Studio\\\\DevEco Studio\\\\sdk\\\\default\\\\openharmony\\\\ets\\\\api\" -Filter \"@ohos.net.networkSecurity.d.ts\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName; Write-Output \"FILE: $f\"; if \\($f\\) { Get-Content $f -TotalCount 120 })",
+      "PowerShell(Get-ChildItem -Recurse -File \"E:\\\\develop\\\\XunAn\\\\XunAn\\\\server\" -Exclude \"node_modules\" | Where-Object { $_.FullName -notmatch 'node_modules' } | Select-Object FullName, Length | Format-Table -AutoSize -Wrap)"
+    ]
+  }
+}

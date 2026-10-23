@@ -1,0 +1,1291 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚ&if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+import router from "@ohos.router";
+import promptAction from "@ohos.promptAction";
+import { SOSStatus } from '../model/SOSInfo';
+import { RescuerStatus } from '../model/RescuerInfo';
+import { Role } from '../model/Role';
+import { getSOSList, getRescuerList, assignTask, getLoggedInPhone, getUserByPhone, setCurrentRole } from '../utils/ApiService';
+import { SOSCard } from '../components/SOSCard';
+import { RescuerCard } from '../components/RescuerCard';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { AppColors, getRoleColor, getRoleBgColor, getRoleLabel, getRoleEmoji, getRolePage } from '../common/Theme';
+const PAGE_ROLE = Role.COMMAND;
+// é¡¶éƒ¨ç»Ÿè®¡å¡ç‰‡å±•å¼€æ—¶çš„å®Œæ•´é«˜åº¦ï¼ˆå« paddingï¼Œå¯å¾®è°ƒï¼‰
+const STATS_FULL_HEIGHT = 92;
+class CommandPage extends ViewPU {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
+        super(parent, __localStorage, elmtId, extraInfo);
+        if (typeof paramsLambda === "function") {
+            this.paramsGenerator_ = paramsLambda;
+        }
+        this.__sosList = new ObservedPropertyObjectPU([], this, "sosList");
+        this.__rescuerList = new ObservedPropertyObjectPU([], this, "rescuerList");
+        this.__showAssignDialog = new ObservedPropertySimplePU(false, this, "showAssignDialog");
+        this.__selectedSOS = new ObservedPropertyObjectPU(null, this, "selectedSOS");
+        this.__filterIndex = new ObservedPropertySimplePU(0, this, "filterIndex");
+        this.__statsHeight = new ObservedPropertySimplePU(STATS_FULL_HEIGHT, this, "statsHeight");
+        this.__showRoleSwitchDialog = new ObservedPropertySimplePU(false, this, "showRoleSwitchDialog");
+        this.__userRoles = new ObservedPropertyObjectPU([], this, "userRoles");
+        this.setInitiallyProvidedValue(params);
+        this.finalizeConstruction();
+    }
+    setInitiallyProvidedValue(params) {
+        if (params.sosList !== undefined) {
+            this.sosList = params.sosList;
+        }
+        if (params.rescuerList !== undefined) {
+            this.rescuerList = params.rescuerList;
+        }
+        if (params.showAssignDialog !== undefined) {
+            this.showAssignDialog = params.showAssignDialog;
+        }
+        if (params.selectedSOS !== undefined) {
+            this.selectedSOS = params.selectedSOS;
+        }
+        if (params.filterIndex !== undefined) {
+            this.filterIndex = params.filterIndex;
+        }
+        if (params.statsHeight !== undefined) {
+            this.statsHeight = params.statsHeight;
+        }
+        if (params.showRoleSwitchDialog !== undefined) {
+            this.showRoleSwitchDialog = params.showRoleSwitchDialog;
+        }
+        if (params.userRoles !== undefined) {
+            this.userRoles = params.userRoles;
+        }
+    }
+    updateStateVars(params) {
+    }
+    purgeVariableDependenciesOnElmtId(rmElmtId) {
+        this.__sosList.purgeDependencyOnElmtId(rmElmtId);
+        this.__rescuerList.purgeDependencyOnElmtId(rmElmtId);
+        this.__showAssignDialog.purgeDependencyOnElmtId(rmElmtId);
+        this.__selectedSOS.purgeDependencyOnElmtId(rmElmtId);
+        this.__filterIndex.purgeDependencyOnElmtId(rmElmtId);
+        this.__statsHeight.purgeDependencyOnElmtId(rmElmtId);
+        this.__showRoleSwitchDialog.purgeDependencyOnElmtId(rmElmtId);
+        this.__userRoles.purgeDependencyOnElmtId(rmElmtId);
+    }
+    aboutToBeDeleted() {
+        this.__sosList.aboutToBeDeleted();
+        this.__rescuerList.aboutToBeDeleted();
+        this.__showAssignDialog.aboutToBeDeleted();
+        this.__selectedSOS.aboutToBeDeleted();
+        this.__filterIndex.aboutToBeDeleted();
+        this.__statsHeight.aboutToBeDeleted();
+        this.__showRoleSwitchDialog.aboutToBeDeleted();
+        this.__userRoles.aboutToBeDeleted();
+        SubscriberManager.Get().delete(this.id__());
+        this.aboutToBeDeletedInternal();
+    }
+    get sosList() {
+        return this.__sosList.get();
+    }
+    set sosList(newValue) {
+        this.__sosList.set(newValue);
+    }
+    get rescuerList() {
+        return this.__rescuerList.get();
+    }
+    set rescuerList(newValue) {
+        this.__rescuerList.set(newValue);
+    }
+    get showAssignDialog() {
+        return this.__showAssignDialog.get();
+    }
+    set showAssignDialog(newValue) {
+        this.__showAssignDialog.set(newValue);
+    }
+    get selectedSOS() {
+        return this.__selectedSOS.get();
+    }
+    set selectedSOS(newValue) {
+        this.__selectedSOS.set(newValue);
+    }
+    get filterIndex() {
+        return this.__filterIndex.get();
+    }
+    set filterIndex(newValue) {
+        this.__filterIndex.set(newValue);
+    }
+    get statsHeight() {
+        return this.__statsHeight.get();
+    }
+    set statsHeight(newValue) {
+        this.__statsHeight.set(newValue);
+    }
+    get showRoleSwitchDialog() {
+        return this.__showRoleSwitchDialog.get();
+    }
+    set showRoleSwitchDialog(newValue) {
+        this.__showRoleSwitchDialog.set(newValue);
+    }
+    get userRoles() {
+        return this.__userRoles.get();
+    }
+    set userRoles(newValue) {
+        this.__userRoles.set(newValue);
+    }
+    aboutToAppear() {
+        this.refresh();
+        this.loadUserRoles();
+    }
+    onPageShow() {
+        this.refresh();
+    }
+    async refresh() {
+        this.sosList = await getSOSList();
+        this.rescuerList = await getRescuerList();
+    }
+    async loadUserRoles() {
+        let phone = getLoggedInPhone();
+        if (phone) {
+            let user = await getUserByPhone(phone);
+            if (user) {
+                this.userRoles = user.roles;
+            }
+        }
+    }
+    openRoleSwitchDialog() {
+        if (this.userRoles.length <= 1) {
+            promptAction.showToast({ message: 'æš‚æ— å…¶ä»–èº«ä»½å¯åˆ‡æ¢' });
+            return;
+        }
+        this.showRoleSwitchDialog = true;
+    }
+    switchToRole(role) {
+        this.showRoleSwitchDialog = false;
+        if (role === PAGE_ROLE) {
+            return;
+        }
+        setCurrentRole(role);
+        AppStorage.setOrCreate('autoEnteredPage', true);
+        router.replaceUrl({ url: getRolePage(role) });
+    }
+    getCount(index) {
+        if (index === 0) {
+            return this.sosList.length;
+        }
+        if (index === 1) {
+            return this.sosList.filter((s) => s.status === SOSStatus.PENDING).length;
+        }
+        if (index === 2) {
+            return this.sosList.filter((s) => s.status === SOSStatus.RESCUING).length;
+        }
+        return this.sosList.filter((s) => s.status === SOSStatus.COMPLETED).length;
+    }
+    getFilteredList() {
+        if (this.filterIndex === 1) {
+            return this.sosList.filter((s) => s.status === SOSStatus.PENDING);
+        }
+        if (this.filterIndex === 2) {
+            return this.sosList.filter((s) => s.status === SOSStatus.RESCUING);
+        }
+        if (this.filterIndex === 3) {
+            return this.sosList.filter((s) => s.status === SOSStatus.COMPLETED);
+        }
+        return this.sosList;
+    }
+    openAssign(sos) {
+        this.selectedSOS = sos;
+        this.showAssignDialog = true;
+    }
+    doAssign(rescuer) {
+        if (this.selectedSOS) {
+            assignTask(this.selectedSOS.id, rescuer.id).then((success) => {
+                if (success) {
+                    this.showAssignDialog = false;
+                    this.selectedSOS = null;
+                    this.refresh();
+                    promptAction.showToast({ message: 'æŒ‡æ´¾æˆåŠŸ', duration: 2000 });
+                }
+                else {
+                    promptAction.showToast({ message: 'æŒ‡æ´¾å¤±è´¥ï¼Œè¯·é‡è¯•', duration: 2000 });
+                }
+            }).catch((err) => {
+                console.error('æŒ‡æ´¾ä»»åŠ¡å¤±è´¥', err);
+                promptAction.showToast({ message: 'æŒ‡æ´¾å¤±è´¥ï¼Œè¯·é‡è¯•', duration: 2000 });
+            });
+        }
+    }
+    // åˆ—è¡¨é¦–é¡¹ç´¢å¼•å˜åŒ–æ—¶ï¼Œæ§åˆ¶ç»Ÿè®¡å¡ç‰‡æ”¶èµ· / å±•å¼€
+    handleScrollIndex(firstIndex) {
+        if (firstIndex > 0 && this.statsHeight !== 0) {
+            // æ»šè¿‡ç¬¬ä¸€æ¡è®°å½•ï¼šæ”¶èµ·
+            this.statsHeight = 0;
+        }
+        else if (firstIndex === 0 && this.statsHeight !== STATS_FULL_HEIGHT) {
+            // å›åˆ°é¡¶éƒ¨ï¼šå±•å¼€
+            this.statsHeight = STATS_FULL_HEIGHT;
+        }
+    }
+    FilterItem(label, color, index, parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Column.create({ space: 4 });
+            Column.layoutWeight(1);
+            Column.padding({ top: 14, bottom: 14 });
+            Column.backgroundColor(this.filterIndex === index ? color : AppColors.card);
+            Column.borderRadius(14);
+            Column.border({ width: 1, color: this.filterIndex === index ? color : AppColors.divider });
+            Column.onClick(() => {
+                this.filterIndex = index;
+            });
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(`${this.getCount(index)}`);
+            Text.fontSize(22);
+            Text.fontWeight(FontWeight.Bold);
+            Text.fontColor(this.filterIndex === index ? Color.White : color);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(label);
+            Text.fontSize(11);
+            Text.fontColor(this.filterIndex === index ? Color.White : AppColors.textSecondary);
+        }, Text);
+        Text.pop();
+        Column.pop();
+    }
+    // é¸¿è’™åŸç”Ÿå¼é¡µé¢è½¬åœºï¼špush ä»å³æ»‘å…¥ã€pop ä»å·¦è¿”å›ï¼Œæ—§é¡µé¢æ·¡å‡ºå½¢æˆè§†å·®
+    pageTransition() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransition.create();
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionEnter.create({ duration: 400, curve: Curve.Friction, type: RouteType.Push });
+            PageTransitionEnter.slide(SlideEffect.Right);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionExit.create({ duration: 400, curve: Curve.Friction, type: RouteType.Push });
+            PageTransitionExit.slide(SlideEffect.Left);
+            PageTransitionExit.opacity(0.6);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionEnter.create({ duration: 400, curve: Curve.Friction, type: RouteType.Pop });
+            PageTransitionEnter.slide(SlideEffect.Left);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionExit.create({ duration: 400, curve: Curve.Friction, type: RouteType.Pop });
+            PageTransitionExit.slide(SlideEffect.Right);
+            PageTransitionExit.opacity(0.6);
+        }, null);
+        PageTransition.pop();
+    }
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Stack.create();
+            Stack.width('100%');
+            Stack.height('100%');
+        }, Stack);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Column.create();
+            Column.width('100%');
+            Column.height('100%');
+            Column.backgroundColor(AppColors.bg);
+            Column.alignItems(HorizontalAlign.Center);
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // æ ‡é¢˜æ 
+            Row.create();
+            // æ ‡é¢˜æ 
+            Row.width('100%');
+            // æ ‡é¢˜æ 
+            Row.alignItems(VerticalAlign.Center);
+            // æ ‡é¢˜æ 
+            Row.padding({ left: 16, right: 16, top: 12, bottom: 12 });
+        }, Row);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Button.createWithLabel('åˆ‡æ¢èº«ä»½');
+            Button.fontSize(11);
+            Button.height(28);
+            Button.padding({ left: 10, right: 10 });
+            Button.backgroundColor(AppColors.successLight);
+            Button.fontColor(AppColors.success);
+            Button.borderRadius(14);
+            Button.onClick(() => this.openRoleSwitchDialog());
+        }, Button);
+        Button.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Blank.create();
+        }, Blank);
+        Blank.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('åº”æ€¥æŒ‡æŒ¥éƒ¨');
+            Text.fontSize(18);
+            Text.fontWeight(FontWeight.Bold);
+            Text.fontColor(AppColors.textPrimary);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Blank.create();
+        }, Blank);
+        Blank.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Row.create();
+            Row.width(40);
+            Row.height(40);
+        }, Row);
+        Row.pop();
+        // æ ‡é¢˜æ 
+        Row.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.create({ space: 8 });
+            globalThis.Context.animation({ duration: 150, curve: Curve.EaseInOut });
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.width('90%');
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.margin({
+                top: this.statsHeight > 0 ? 8 : 0,
+                bottom: this.statsHeight > 0 ? 16 : 0
+            });
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.height(this.statsHeight);
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.opacity(this.statsHeight / STATS_FULL_HEIGHT);
+            // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+            Row.clip(true);
+            globalThis.Context.animation(null);
+        }, Row);
+        this.FilterItem.bind(this)('å…¨éƒ¨', AppColors.primary, 0);
+        this.FilterItem.bind(this)('å¾…æ•‘æ´', AppColors.danger, 1);
+        this.FilterItem.bind(this)('æ•‘æ´ä¸­', AppColors.warning, 2);
+        this.FilterItem.bind(this)('å·²å®Œæˆ', AppColors.success, 3);
+        // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+        Row.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Button.createWithLabel('æŸ¥çœ‹å…¨å±€åœ°å›¾');
+            Button.width('90%');
+            Button.height(40);
+            Button.fontSize(14);
+            Button.fontWeight(FontWeight.Medium);
+            Button.fontColor(Color.White);
+            Button.backgroundColor(AppColors.primary);
+            Button.borderRadius(20);
+            Button.margin({ bottom: 16 });
+            Button.onClick(() => {
+                router.pushUrl({ url: 'pages/MapPage' });
+            });
+        }, Button);
+        Button.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Row.create();
+            Row.width('90%');
+            Row.margin({ bottom: 12 });
+        }, Row);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('æ±‚æ•‘ä¿¡æ¯åˆ—è¡¨');
+            Text.fontSize(16);
+            Text.fontWeight(FontWeight.Bold);
+            Text.fontColor(AppColors.textPrimary);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Blank.create();
+        }, Blank);
+        Blank.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create(`å…± ${this.getFilteredList().length} æ¡`);
+            Text.fontSize(12);
+            Text.fontColor(AppColors.textTertiary);
+        }, Text);
+        Text.pop();
+        Row.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (this.getFilteredList().length === 0) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 8 });
+                        Column.width('100%');
+                        Column.layoutWeight(1);
+                        Column.justifyContent(FlexAlign.Center);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('ğŸ“­');
+                        Text.fontSize(40);
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('æš‚æ— æ±‚æ•‘ä¿¡æ¯');
+                        Text.fontSize(14);
+                        Text.fontColor(AppColors.textTertiary);
+                    }, Text);
+                    Text.pop();
+                    Column.pop();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        List.create({ space: 12 });
+                        List.width('90%');
+                        List.layoutWeight(1);
+                        List.padding({ bottom: 16 });
+                        List.alignListItem(ListItemAlign.Start);
+                        List.scrollBar(BarState.Off);
+                        List.onScrollIndex((firstIndex) => {
+                            this.handleScrollIndex(firstIndex);
+                        });
+                    }, List);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        ForEach.create();
+                        const forEachItemGenFunction = _item => {
+                            const item = _item;
+                            {
+                                const itemCreation = (elmtId, isInitialRender) => {
+                                    ViewStackProcessor.StartGetAccessRecordingFor(elmtId);
+                                    ListItem.create(deepRenderFunction, true);
+                                    if (!isInitialRender) {
+                                        ListItem.pop();
+                                    }
+                                    ViewStackProcessor.StopGetAccessRecording();
+                                };
+                                const itemCreation2 = (elmtId, isInitialRender) => {
+                                    ListItem.create(deepRenderFunction, true);
+                                };
+                                const deepRenderFunction = (elmtId, isInitialRender) => {
+                                    itemCreation(elmtId, isInitialRender);
+                                    {
+                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                            if (isInitialRender) {
+                                                let componentCall = new SOSCard(this, {
+                                                    sos: item,
+                                                    onAssign: item.status === SOSStatus.PENDING ? (() => this.openAssign(item)) : undefined,
+                                                    onDetail: () => {
+                                                        router.pushUrl({
+                                                            url: 'pages/SOSDetailPage',
+                                                            params: { sosId: item.id }
+                                                        });
+                                                    }
+                                                }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/CommandPage.ets", line: 256, col: 17 });
+                                                ViewPU.create(componentCall);
+                                                let paramsLambda = () => {
+                                                    return {
+                                                        sos: item,
+                                                        onAssign: item.status === SOSStatus.PENDING ? (() => this.openAssign(item)) : undefined,
+                                                        onDetail: () => {
+                                                            router.pushUrl({
+                                                                url: 'pages/SOSDetailPage',
+                                                                params: { sosId: item.id }
+                                                            });
+                                                        }
+                                                    };
+                                                };
+                                                componentCall.paramsGenerator_ = paramsLambda;
+                                            }
+                                            else {
+                                                this.updateStateVarsOfChildByElmtId(elmtId, {
+                                                    sos: item
+                                                });
+                                            }
+                                        }, { name: "SOSCard" });
+                                    }
+                                    ListItem.pop();
+                                };
+                                this.observeComponentCreation2(itemCreation2, ListItem);
+                                ListItem.pop();
+                            }
+                        };
+                        this.forEachUpdateFunction(elmtId, this.getFilteredList(), forEachItemGenFunction, (item) => item.id, false, false);
+                    }, ForEach);
+                    ForEach.pop();
+                    List.pop();
+                });
+            }
+        }, If);
+        If.pop();
+        {
+            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                if (isInitialRender) {
+                    let componentCall = new BottomNavBar(this, { activeTab: 0 }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/CommandPage.ets", line: 279, col: 9 });
+                    ViewPU.create(componentCall);
+                    let paramsLambda = () => {
+                        return {
+                            activeTab: 0
+                        };
+                    };
+                    componentCall.paramsGenerator_ = paramsLambda;
+                }
+                else {
+                    this.updateStateVarsOfChildByElmtId(elmtId, {
+                        activeTab: 0
+                    });
+                }
+            }, { name: "BottomNavBar" });
+        }
+        Column.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (this.showAssignDialog) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create();
+                        Column.width('85%');
+                        Column.height('60%');
+                        Column.padding(24);
+                        Column.backgroundColor(AppColors.card);
+                        Column.borderRadius(20);
+                        Column.shadow({ radius: 24, color: 'rgba(0,0,0,0.2)' });
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('é€‰æ‹©æ•‘æ´äººå‘˜');
+                        Text.fontSize(18);
+                        Text.fontWeight(FontWeight.Bold);
+                        Text.fontColor(AppColors.textPrimary);
+                        Text.margin({ bottom: 16 });
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        List.create({ space: 8 });
+                        List.width('100%');
+                        List.layoutWeight(1);
+                        List.scrollBar(BarState.Off);
+                    }, List);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        ForEach.create();
+                        const forEachItemGenFunction = _item => {
+                            const item = _item;
+                            {
+                                const itemCreation = (elmtId, isInitialRender) => {
+                                    ViewStackProcessor.StartGetAccessRecordingFor(elmtId);
+                                    ListItem.create(deepRenderFunction, true);
+                                    if (!isInitialRender) {
+                                        ListItem.pop();
+                                    }
+                                    ViewStackProcessor.StopGetAccessRecording();
+                                };
+                                const itemCreation2 = (elmtId, isInitialRender) => {
+                                    ListItem.create(deepRenderFunction, true);
+                                };
+                                const deepRenderFunction = (elmtId, isInitialRender) => {
+                                    itemCreation(elmtId, isInitialRender);
+                                    {
+                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                            if (isInitialRender) {
+                                                let componentCall = new RescuerCard(this, {
+                                                    rescuer: item,
+                                                    onSelect: () => this.doAssign(item)
+                                                }, undefined, elmtId, () => { }, { page: "entry/src/main/ets/pages/CommandPage.ets", line: 299, col: 19 });
+                                                ViewPU.create(componentCall);
+                                                let paramsLambda = () => {
+                                                    return {
+                                                        rescuer: item,
+                                                        onSelect: () => this.doAssign(item)
+                                                    };
+                                                };
+                                                componentCall.paramsGenerator_ = paramsLambda;
+                                            }
+                                            else {
+                                                this.updateStateVarsOfChildByElmtId(elmtId, {
+                                                    rescuer: item
+                                                });
+                                            }
+                                        }, { name: "RescuerCard" });
+                                    }
+                                    ListItem.pop();
+                                };
+                                this.observeComponentCreation2(itemCreation2, ListItem);
+                                ListItem.pop();
+                            }
+                        };
+                        this.forEachUpdateFunction(elmtId, this.rescuerList.filter(r => r.status === RescuerStatus.IDLE), forEachItemGenFunction, (item) => item.id, false, false);
+                    }, ForEach);
+                    ForEach.pop();
+                    List.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('å–æ¶ˆ');
+                        Button.width('100%');
+                        Button.height(44);
+                        Button.fontSize(15);
+                        Button.backgroundColor(AppColors.bgSecondary);
+                        Button.fontColor(AppColors.textSecondary);
+                        Button.borderRadius(22);
+                        Button.margin({ top: 16 });
+                        Button.onClick(() => this.showAssignDialog = false);
+                    }, Button);
+                    Button.pop();
+                    Column.pop();
+                });
+            }
+            // ========== èº«ä»½åˆ‡æ¢å¼¹çª— ==========
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                });
+            }
+        }, If);
+        If.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            // ========== èº«ä»½åˆ‡æ¢å¼¹çª— ==========
+            if (this.showRoleSwitchDialog) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create();
+                        Column.width('100%');
+                        Column.height('100%');
+                        Column.justifyContent(FlexAlign.End);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create();
+                        Column.width('100%');
+                        Column.layoutWeight(1);
+                        Column.backgroundColor('rgba(0,0,0,0.5)');
+                        Column.onClick(() => { this.showRoleSwitchDialog = false; });
+                    }, Column);
+                    Column.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 16 });
+                        Column.width('100%');
+                        Column.padding(20);
+                        Column.backgroundColor(AppColors.card);
+                        Column.borderRadius({ topLeft: 20, topRight: 20 });
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('åˆ‡æ¢èº«ä»½');
+                        Text.fontSize(18);
+                        Text.fontWeight(FontWeight.Bold);
+                        Text.fontColor(AppColors.textPrimary);
+                        Text.width('100%');
+                        Text.textAlign(TextAlign.Center);
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 10 });
+                        Column.width('100%');
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        ForEach.create();
+                        const forEachItemGenFunction = _item => {
+                            const role = _item;
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Row.create({ space: 10 });
+                                Row.width('100%');
+                                Row.padding(14);
+                                Row.backgroundColor(role === PAGE_ROLE ? getRoleBgColor(role) : AppColors.bgSecondary);
+                                Row.borderRadius(12);
+                                Row.border({
+                                    width: role === PAGE_ROLE ? 1.5 : 0,
+                                    color: role === PAGE_ROLE ? getRoleColor(role) : Color.Transparent
+                                });
+                                Row.onClick(() => this.switchToRole(role));
+                            }, Row);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Text.create(getRoleEmoji(role));
+                                Text.fontSize(22);
+                            }, Text);
+                            Text.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Text.create(getRoleLabel(role));
+                                Text.fontSize(15);
+                                Text.fontWeight(FontWeight.Medium);
+                                Text.fontColor(getRoleColor(role));
+                            }, Text);
+                            Text.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Blank.create();
+                            }, Blank);
+                            Blank.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                If.create();
+                                if (role === PAGE_ROLE) {
+                                    this.ifElseBranchUpdateFunction(0, () => {
+                                        this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                            Text.create('å½“å‰');
+                                            Text.fontSize(12);
+                                            Text.fontColor(AppColors.textTertiary);
+                                        }, Text);
+                                        Text.pop();
+                                    });
+                                }
+                                else {
+                                    this.ifElseBranchUpdateFunction(1, () => {
+                                    });
+                                }
+                            }, If);
+                            If.pop();
+                            Row.pop();
+                        };
+                        this.forEachUpdateFunction(elmtId, this.userRoles, forEachItemGenFunction, (role) => role, false, false);
+                    }, ForEach);
+                    ForEach.pop();
+                    Column.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('å–æ¶ˆ');
+                        Button.width('100%');
+                        Button.height(44);
+                        Button.fontSize(15);
+                        Button.backgroundColor(AppColors.bgSecondary);
+                        Button.fontColor(AppColors.textSecondary);
+                        Button.borderRadius(22);
+                        Button.onClick(() => { this.showRoleSwitchDialog = false; });
+                    }, Button);
+                    Button.pop();
+                    Column.pop();
+                    Column.pop();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                });
+            }
+        }, If);
+        If.pop();
+        Stack.pop();
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+    static getEntryName() {
+        return "CommandPage";
+    }
+}
+registerNamedRoute(() => new CommandPage(undefined, {}), "", { bundleName: "com.xunan.floodrescue", moduleName: "entry", pagePath: "pages/CommandPage", pageFullPath: "entry/src/main/ets/pages/CommandPage", integratedHsp: "false", moduleType: "followWithHap" });
+//# sourceMappingURL=CommandPage.js.mapÂšÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsÙTC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\SOSInfo.etsÙXC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\RescuerInfo.etsÙQC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\Role.etsÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsÙYC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\SOSCard.etsÙ]C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\RescuerCard.etsÙ^C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsÙXC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\pages\CommandPage.etsÔrBšªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¥entryÃÂÙ5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÙ/C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn¥entry¥1.0.0Ô  Ù5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÃÃÚ2^import { router, promptAction } from '@kit.ArkUI';
+import { SOSInfo, SOSStatus } from '../model/SOSInfo';
+import { RescuerInfo, RescuerStatus } from '../model/RescuerInfo';
+import { Role } from '../model/Role';
+import { getSOSList, getRescuerList, assignTask, getLoggedInPhone, getUserByPhone, setCurrentRole } from '../utils/ApiService';
+import { SOSCard } from '../components/SOSCard';
+import { RescuerCard } from '../components/RescuerCard';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { AppColors, getRoleColor, getRoleBgColor, getRoleLabel, getRoleEmoji, getRolePage } from '../common/Theme';
+
+const PAGE_ROLE = Role.COMMAND;
+
+// é¡¶éƒ¨ç»Ÿè®¡å¡ç‰‡å±•å¼€æ—¶çš„å®Œæ•´é«˜åº¦ï¼ˆå« paddingï¼Œå¯å¾®è°ƒï¼‰
+const STATS_FULL_HEIGHT = 92;
+
+@Entry
+@Component
+struct CommandPage {
+  @State sosList: SOSInfo[] = [];
+  @State rescuerList: RescuerInfo[] = [];
+  @State showAssignDialog: boolean = false;
+  @State selectedSOS: SOSInfo | null = null;
+  // çŠ¶æ€ç­›é€‰ï¼š0=å…¨éƒ¨ 1=å¾…æ•‘æ´ 2=æ•‘æ´ä¸­ 3=å·²å®Œæˆ
+  @State filterIndex: number = 0;
+  // é¡¶éƒ¨ç»Ÿè®¡å¡ç‰‡å½“å‰é«˜åº¦
+  @State statsHeight: number = STATS_FULL_HEIGHT;
+
+  // èº«ä»½åˆ‡æ¢å¼¹çª—
+  @State showRoleSwitchDialog: boolean = false;
+  @State userRoles: Role[] = [];
+
+  aboutToAppear() {
+    this.refresh();
+    this.loadUserRoles();
+  }
+
+  onPageShow() {
+    this.refresh();
+  }
+
+  async refresh() {
+    this.sosList = await getSOSList();
+    this.rescuerList = await getRescuerList();
+  }
+
+  async loadUserRoles() {
+    let phone = getLoggedInPhone();
+    if (phone) {
+      let user = await getUserByPhone(phone);
+      if (user) {
+        this.userRoles = user.roles;
+      }
+    }
+  }
+
+  openRoleSwitchDialog() {
+    if (this.userRoles.length <= 1) {
+      promptAction.showToast({ message: 'æš‚æ— å…¶ä»–èº«ä»½å¯åˆ‡æ¢' });
+      return;
+    }
+    this.showRoleSwitchDialog = true;
+  }
+
+  switchToRole(role: Role) {
+    this.showRoleSwitchDialog = false;
+    if (role === PAGE_ROLE) {
+      return;
+    }
+    setCurrentRole(role);
+    AppStorage.setOrCreate('autoEnteredPage', true);
+    router.replaceUrl({ url: getRolePage(role) });
+  }
+
+  getCount(index: number): number {
+    if (index === 0) {
+      return this.sosList.length;
+    }
+    if (index === 1) {
+      return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.PENDING).length;
+    }
+    if (index === 2) {
+      return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.RESCUING).length;
+    }
+    return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.COMPLETED).length;
+  }
+
+  getFilteredList(): SOSInfo[] {
+    if (this.filterIndex === 1) {
+      return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.PENDING);
+    }
+    if (this.filterIndex === 2) {
+      return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.RESCUING);
+    }
+    if (this.filterIndex === 3) {
+      return this.sosList.filter((s: SOSInfo) => s.status === SOSStatus.COMPLETED);
+    }
+    return this.sosList;
+  }
+
+  openAssign(sos: SOSInfo) {
+    this.selectedSOS = sos;
+    this.showAssignDialog = true;
+  }
+
+  doAssign(rescuer: RescuerInfo) {
+    if (this.selectedSOS) {
+      assignTask(this.selectedSOS.id, rescuer.id).then((success: boolean) => {
+        if (success) {
+          this.showAssignDialog = false;
+          this.selectedSOS = null;
+          this.refresh();
+          promptAction.showToast({ message: 'æŒ‡æ´¾æˆåŠŸ', duration: 2000 });
+        } else {
+          promptAction.showToast({ message: 'æŒ‡æ´¾å¤±è´¥ï¼Œè¯·é‡è¯•', duration: 2000 });
+        }
+      }).catch((err: Error) => {
+        console.error('æŒ‡æ´¾ä»»åŠ¡å¤±è´¥', err);
+        promptAction.showToast({ message: 'æŒ‡æ´¾å¤±è´¥ï¼Œè¯·é‡è¯•', duration: 2000 });
+      });
+    }
+  }
+
+  // åˆ—è¡¨é¦–é¡¹ç´¢å¼•å˜åŒ–æ—¶ï¼Œæ§åˆ¶ç»Ÿè®¡å¡ç‰‡æ”¶èµ· / å±•å¼€
+  private handleScrollIndex(firstIndex: number) {
+    if (firstIndex > 0 && this.statsHeight !== 0) {
+      // æ»šè¿‡ç¬¬ä¸€æ¡è®°å½•ï¼šæ”¶èµ·
+      this.statsHeight = 0;
+    } else if (firstIndex === 0 && this.statsHeight !== STATS_FULL_HEIGHT) {
+      // å›åˆ°é¡¶éƒ¨ï¼šå±•å¼€
+      this.statsHeight = STATS_FULL_HEIGHT;
+    }
+  }
+
+  @Builder
+  FilterItem(label: string, color: string, index: number) {
+    Column({ space: 4 }) {
+      Text(`${this.getCount(index)}`)
+        .fontSize(22)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.filterIndex === index ? Color.White : color)
+      Text(label)
+        .fontSize(11)
+        .fontColor(this.filterIndex === index ? Color.White : AppColors.textSecondary)
+    }
+    .layoutWeight(1)
+    .padding({ top: 14, bottom: 14 })
+    .backgroundColor(this.filterIndex === index ? color : AppColors.card)
+    .borderRadius(14)
+    .border({ width: 1, color: this.filterIndex === index ? color : AppColors.divider })
+    .onClick(() => {
+      this.filterIndex = index;
+    })
+  }
+
+  // é¸¿è’™åŸç”Ÿå¼é¡µé¢è½¬åœºï¼špush ä»å³æ»‘å…¥ã€pop ä»å·¦è¿”å›ï¼Œæ—§é¡µé¢æ·¡å‡ºå½¢æˆè§†å·®
+  pageTransition() {
+    PageTransitionEnter({ duration: 400, curve: Curve.Friction, type: RouteType.Push })
+      .slide(SlideEffect.Right)
+    PageTransitionExit({ duration: 400, curve: Curve.Friction, type: RouteType.Push })
+      .slide(SlideEffect.Left)
+      .opacity(0.6)
+    PageTransitionEnter({ duration: 400, curve: Curve.Friction, type: RouteType.Pop })
+      .slide(SlideEffect.Left)
+    PageTransitionExit({ duration: 400, curve: Curve.Friction, type: RouteType.Pop })
+      .slide(SlideEffect.Right)
+      .opacity(0.6)
+  }
+
+  build() {
+    Stack() {
+      Column() {
+        // æ ‡é¢˜æ 
+        Row() {
+          Button('åˆ‡æ¢èº«ä»½')
+            .fontSize(11)
+            .height(28)
+            .padding({ left: 10, right: 10 })
+            .backgroundColor(AppColors.successLight)
+            .fontColor(AppColors.success)
+            .borderRadius(14)
+            .onClick(() => this.openRoleSwitchDialog())
+
+          Blank()
+          Text('åº”æ€¥æŒ‡æŒ¥éƒ¨')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.textPrimary)
+          Blank()
+
+          Row()
+            .width(40)
+            .height(40)
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+
+        // ç»Ÿè®¡ç­›é€‰å¡ç‰‡ï¼ˆä¸Šæ»‘æ”¶èµ·ï¼Œä¸‹æ»‘å±•å¼€ï¼‰
+        Row({ space: 8 }) {
+          this.FilterItem('å…¨éƒ¨', AppColors.primary, 0)
+          this.FilterItem('å¾…æ•‘æ´', AppColors.danger, 1)
+          this.FilterItem('æ•‘æ´ä¸­', AppColors.warning, 2)
+          this.FilterItem('å·²å®Œæˆ', AppColors.success, 3)
+        }
+        .width('90%')
+        .margin({
+          top: this.statsHeight > 0 ? 8 : 0,
+          bottom: this.statsHeight > 0 ? 16 : 0
+        })
+        .height(this.statsHeight)
+        .opacity(this.statsHeight / STATS_FULL_HEIGHT)
+        .clip(true)
+        .animation({ duration: 150, curve: Curve.EaseInOut })
+
+        Button('æŸ¥çœ‹å…¨å±€åœ°å›¾')
+          .width('90%')
+          .height(40)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.primary)
+          .borderRadius(20)
+          .margin({ bottom: 16 })
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/MapPage' });
+          })
+
+        Row() {
+          Text('æ±‚æ•‘ä¿¡æ¯åˆ—è¡¨')
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.textPrimary)
+          Blank()
+          Text(`å…± ${this.getFilteredList().length} æ¡`)
+            .fontSize(12)
+            .fontColor(AppColors.textTertiary)
+        }
+        .width('90%')
+        .margin({ bottom: 12 })
+
+        if (this.getFilteredList().length === 0) {
+          Column({ space: 8 }) {
+            Text('ğŸ“­')
+              .fontSize(40)
+            Text('æš‚æ— æ±‚æ•‘ä¿¡æ¯')
+              .fontSize(14)
+              .fontColor(AppColors.textTertiary)
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .justifyContent(FlexAlign.Center)
+        } else {
+          List({ space: 12 }) {
+            ForEach(this.getFilteredList(), (item: SOSInfo) => {
+              ListItem() {
+                SOSCard({
+                  sos: item,
+                  onAssign: item.status === SOSStatus.PENDING ? ((): void => this.openAssign(item)) : undefined,
+                  onDetail: (): void => {
+                    router.pushUrl({
+                      url: 'pages/SOSDetailPage',
+                      params: { sosId: item.id }
+                    });
+                  }
+                })
+              }
+            }, (item: SOSInfo) => item.id)
+          }
+          .width('90%')
+          .layoutWeight(1)
+          .padding({ bottom: 16 })
+          .alignListItem(ListItemAlign.Start)
+          .scrollBar(BarState.Off)
+          .onScrollIndex((firstIndex: number) => {
+            this.handleScrollIndex(firstIndex);
+          })
+        }
+
+        BottomNavBar({ activeTab: 0 })
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(AppColors.bg)
+      .alignItems(HorizontalAlign.Center)
+
+      if (this.showAssignDialog) {
+        Column() {
+          Text('é€‰æ‹©æ•‘æ´äººå‘˜')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.textPrimary)
+            .margin({ bottom: 16 })
+
+          List({ space: 8 }) {
+            ForEach(
+              this.rescuerList.filter(r => r.status === RescuerStatus.IDLE),
+              (item: RescuerInfo) => {
+                ListItem() {
+                  RescuerCard({
+                    rescuer: item,
+                    onSelect: (): void => this.doAssign(item)
+                  })
+                }
+              },
+              (item: RescuerInfo) => item.id
+            )
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
+
+          Button('å–æ¶ˆ')
+            .width('100%')
+            .height(44)
+            .fontSize(15)
+            .backgroundColor(AppColors.bgSecondary)
+            .fontColor(AppColors.textSecondary)
+            .borderRadius(22)
+            .margin({ top: 16 })
+            .onClick(() => this.showAssignDialog = false)
+        }
+        .width('85%')
+        .height('60%')
+        .padding(24)
+        .backgroundColor(AppColors.card)
+        .borderRadius(20)
+        .shadow({ radius: 24, color: 'rgba(0,0,0,0.2)' })
+      }
+
+      // ========== èº«ä»½åˆ‡æ¢å¼¹çª— ==========
+      if (this.showRoleSwitchDialog) {
+        Column() {
+          Column()
+            .width('100%')
+            .layoutWeight(1)
+            .backgroundColor('rgba(0,0,0,0.5)')
+            .onClick(() => { this.showRoleSwitchDialog = false; })
+
+          Column({ space: 16 }) {
+            Text('åˆ‡æ¢èº«ä»½')
+              .fontSize(18)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.textPrimary)
+              .width('100%')
+              .textAlign(TextAlign.Center)
+
+            Column({ space: 10 }) {
+              ForEach(
+                this.userRoles,
+                (role: Role) => {
+                  Row({ space: 10 }) {
+                    Text(getRoleEmoji(role))
+                      .fontSize(22)
+                    Text(getRoleLabel(role))
+                      .fontSize(15)
+                      .fontWeight(FontWeight.Medium)
+                      .fontColor(getRoleColor(role))
+                    Blank()
+                    if (role === PAGE_ROLE) {
+                      Text('å½“å‰')
+                        .fontSize(12)
+                        .fontColor(AppColors.textTertiary)
+                    }
+                  }
+                  .width('100%')
+                  .padding(14)
+                  .backgroundColor(role === PAGE_ROLE ? getRoleBgColor(role) : AppColors.bgSecondary)
+                  .borderRadius(12)
+                  .border({
+                    width: role === PAGE_ROLE ? 1.5 : 0,
+                    color: role === PAGE_ROLE ? getRoleColor(role) : Color.Transparent
+                  })
+                  .onClick(() => this.switchToRole(role))
+                },
+                (role: Role) => role
+              )
+            }
+            .width('100%')
+
+            Button('å–æ¶ˆ')
+              .width('100%')
+              .height(44)
+              .fontSize(15)
+              .backgroundColor(AppColors.bgSecondary)
+              .fontColor(AppColors.textSecondary)
+              .borderRadius(22)
+              .onClick(() => { this.showRoleSwitchDialog = false; })
+          }
+          .width('100%')
+          .padding(20)
+          .backgroundColor(AppColors.card)
+          .borderRadius({ topLeft: 20, topRight: 20 })
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.End)
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+}ÀÔrCš¬@ohos.router²@ohos.promptAction°../model/SOSInfo­../model/Role³../utils/ApiServiceµ../components/SOSCard¯../common/Themeº../components/BottomNavBar´../model/RescuerInfo¹../components/RescuerCardÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsAÃªoh-resolveÂDAÃÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsAÃªoh-resolveÂDAÂÙTC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\SOSInfo.etsAÃªoh-resolveÂDAÂÙQC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\Role.etsAÃªoh-resolveÂDAÂÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsAÃªoh-resolveÂDAÂÙYC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\SOSCard.etsAÃªoh-resolveÂDAÂÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsAÃªoh-resolveÂDAÂÙ^C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\BottomNavBar.etsAÃªoh-resolveÂDAÂÙXC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\RescuerInfo.etsAÃªoh-resolveÂDAÂÙ]C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\RescuerCard.etsAÃªoh-resolveÂ“ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings®CommandPage.js ‘¯CommandPage.etsÜâ–”    ”  	”  ”  %”!  1”"  2–”    ”  ”  ”  %”-  1”.  2˜”   ” ”	 ” ” ” #”, 5”- 6˜”   ” ”	 ” #” %” +”4 ÌA”5 ÌB˜”   ” ”	 	” ” ” ”$ $”% %Ü ”   ” ”	 	” ” ”# #”% %”/ /”1 1”ÌA ÌA”ÌC ÌC”ÌQ ÌQ”ÌS ÌS”Ìa Ìa”Ìc Ìc”Ìi Ìi”Ì~ Ì~”Ì Ì˜”   ” ”	 	” ” ” ”/ /”0 0˜”   ” ”	 	” ” ” ”7 7”8 8˜”   ” ”	 	” ” ” ”9 9”: :Ü ”   ” ”	 	” ” ”   ”" "”0 0”2 2”> >”Ì@ Ì@”ÌL ÌL”ÌN ÌN”ÌY ÌY”Ì[ Ì[”Ìa Ìa”Ìr Ìr”Ìs Ìs˜”  
+ ” 
+” 
+” 
+” 
+” 
+” 
+” 
+’”   ”   –”   ” ” ” ” ” ’” ” ‘”  ’”6 ”8  ’”: &”< (’”? %”ÌD *’”: '”> +’”: ”;  ’”: ”ÌK 0’”ÌC )”ÌH .’”8 ”: ‘” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” ” –”  ”  ”  	”  ”  ”  –” !” !” !	” !” !” !’” "” "’” $” $–” %” %” %	” %” %” %’” &” &”” (”	 (”
+ (” (™” )” )” )	” )” )” )”' )#”) )%”* )&™” *” *” *	” *” *”! *”/ *+”1 *-”2 *.’” +” +”” -”	 -”
+ -” -—” .” .” .” .”$ . ”& ."”' .#”” /” /” /” /š” 0” 0
+” 0” 0” 0”+ 0%”, 0&”1 0+”2 0,”3 0-”” 1” 1
+” 1” 1™” 2” 2” 2” 2”! 2”% 2”& 2”+ 2#”, 2$‘” 3‘”	 4’” 5” 5’” 7” 7š” 8” 8” 8” 8” 8” 8”! 8”% 8!”& 8"”( 8$œ” 9” 9” 9”" 9”# 9”% 9”, 9&”. 9(”9 93”; 95”< 96”= 97’” :” :‘”	 ;—” <” <” <	”! <”$ < ”( <$”) <%’” =” =”” ?” ?” ?” ?—” Ì@” Ì@” Ì@	”! Ì@”$ Ì@ ”) Ì@%”* Ì@&–” ÌA” ÌA” ÌA” ÌA” ÌA”  ÌA’” ÌB” ÌB‘”	 ÌC–” ÌD” ÌD” ÌD” ÌD” ÌD” ÌDš” ÌE” ÌE” ÌE” ÌE” ÌE”0 ÌE,”2 ÌE.”6 ÌE2”7 ÌE3”8 ÌE4Ÿ” ÌF” ÌF
+” ÌF” ÌF” ÌF” ÌF” ÌF”! ÌF”, ÌF(”- ÌF)”1 ÌF-”2 ÌF.”4 ÌF0”5 ÌF1”6 ÌF2’” ÌG” ÌG”” ÌI” ÌI
+” ÌI” ÌI–” ÌJ” ÌJ” ÌJ” ÌJ” ÌJ” ÌJ˜” ÌK” ÌK” ÌK” ÌK” ÌK”  ÌK”& ÌK ”' ÌK!‘”	 ÌL–” ÌM” ÌM” ÌM” ÌM” ÌM” ÌMÜ ” ÌN” ÌN” ÌN” ÌN” ÌN”  ÌN”& ÌN ”' ÌN!”( ÌN"”) ÌN,”+ ÌN.”- ÌN0”. ÌN1”/ ÌN2”0 ÌN3”6 ÌN9”; ÌN>”ÌD ÌNÌG”ÌE ÌNÌH”ÌL ÌNÌO”ÌM ÌNÌP”ÌN ÌNÌQ”ÌT ÌNÌW”ÌU ÌNÌX‘”	 ÌO–” ÌP” ÌP” ÌP” ÌP” ÌP” ÌPÜ ” ÌQ” ÌQ” ÌQ” ÌQ” ÌQ”  ÌQ”& ÌQ ”' ÌQ!”( ÌQ"”) ÌQ,”+ ÌQ.”- ÌQ0”. ÌQ1”/ ÌQ2”0 ÌQ3”6 ÌQ9”; ÌQ>”ÌD ÌQÌG”ÌE ÌQÌH”ÌM ÌQÌP”ÌN ÌQÌQ”ÌO ÌQÌR”ÌU ÌQÌX”ÌV ÌQÌY‘”	 ÌRÜ ” ÌS” ÌS” ÌS” ÌS” ÌS” ÌS”" ÌS”# ÌS”$ ÌS ”% ÌS*”' ÌS,”) ÌS.”* ÌS/”+ ÌS0”, ÌS1”2 ÌS7”7 ÌS<”Ì@ ÌSÌE”ÌA ÌSÌF”ÌJ ÌSÌO”ÌK ÌSÌP”ÌL ÌSÌQ”ÌR ÌSÌW”ÌS ÌSÌX’” ÌT” ÌT’” ÌV” ÌV˜” ÌW” ÌW” ÌW” ÌW” ÌW”! ÌW”" ÌW”$ ÌW Ü ” ÌX” ÌX” ÌX” ÌX” ÌX”  ÌX”& ÌX ”' ÌX!”( ÌX"”) ÌX,”+ ÌX.”- ÌX0”. ÌX1”/ ÌX2”0 ÌX3”6 ÌX9”; ÌX>”ÌD ÌXÌG”ÌE ÌXÌH”ÌL ÌXÌO”ÌM ÌXÌP”ÌN ÌXÌQ‘”	 ÌY˜” ÌZ” ÌZ” ÌZ” ÌZ” ÌZ”! ÌZ”" ÌZ”$ ÌZ Ü ” Ì[” Ì[” Ì[” Ì[” Ì[”  Ì[”& Ì[ ”' Ì[!”( Ì["”) Ì[,”+ Ì[.”- Ì[0”. Ì[1”/ Ì[2”0 Ì[3”6 Ì[9”; Ì[>”ÌD Ì[ÌG”ÌE Ì[ÌH”ÌM Ì[ÌP”ÌN Ì[ÌQ”ÌO Ì[ÌR‘”	 Ì\˜” Ì]” Ì]” Ì]” Ì]” Ì]”! Ì]”" Ì]”$ Ì] Ü ” Ì^” Ì^” Ì^” Ì^” Ì^”  Ì^”& Ì^ ”' Ì^!”( Ì^"”) Ì^,”+ Ì^.”- Ì^0”. Ì^1”/ Ì^2”0 Ì^3”6 Ì^9”; Ì^>”ÌD Ì^ÌG”ÌE Ì^ÌH”ÌN Ì^ÌQ”ÌO Ì^ÌR”ÌP Ì^ÌS‘”	 Ì_–” Ì`” Ì`” Ì`” Ì`” Ì`” Ì`’” Ìa” Ìa”” Ìc” Ìc” Ìc” Ìc—” Ìd” Ìd” Ìd	” Ìd” Ìd” Ìd” Ìd—” Ìe” Ìe” Ìe	” Ìe”  Ìe”$ Ìe ”% Ìe!’” Ìf” Ìf”” Ìh” Ìh
+” Ìh” Ìh–” Ìi” Ìi” Ìi” Ìi” Ìi” ÌiÜ ” Ìj” Ìj” Ìj” Ìj” Ìj”' Ìj!”( Ìj"”* Ìj$”, Ìj&”3 Ìj-”4 Ìj.”6 Ìj0”7 Ìj1”8 Ìj2”< Ìj6”= Ìj7”> Ìj8”ÌE ÌjÌH”ÌG ÌjÌJ”ÌI ÌjÌL”” Ìk” Ìk” Ìk” Ìk—” Ìl
+” Ìl” Ìl”) Ìl”, Ìl"”1 Ìl'”2 Ìl(—” Ìm
+” Ìm” Ìm”$ Ìm”' Ìm”+ Ìm!”, Ìm"–” Ìn
+” Ìn” Ìn”  Ìn”" Ìn”# ÌnÜ ” Ìo
+”  Ìo”! Ìo”* Ìo ”+ Ìo!”- Ìo#”4 Ìo*”6 Ìo,”< Ìo2”> Ìo4”ÌF Ìo<”ÌH Ìo>”ÌL ÌoÌB”ÌN ÌoÌD”ÌO ÌoÌE”ÌP ÌoÌF‘” Ìp	‘” ÌpÜ ” Ìq
+”  Ìq”! Ìq”* Ìq ”+ Ìq!”- Ìq#”4 Ìq*”6 Ìq,”Ì@ Ìq6”ÌB Ìq8”ÌJ ÌqÌ@”ÌL ÌqÌB”ÌP ÌqÌF”ÌR ÌqÌH”ÌS ÌqÌI”ÌT ÌqÌJ‘” Ìr	š” Ìs” Ìs” Ìs” Ìs	” Ìs” Ìs” Ìs” Ìs” Ìs” Ìsš” Ìt” Ìt” Ìt” Ìt” Ìt”& Ìt”( Ìt ”+ Ìt#”, Ìt$”- Ìt%Ü ” Ìu” Ìu” Ìu”& Ìu”' Ìu”) Ìu!”0 Ìu(”2 Ìu*”< Ìu4”> Ìu6”ÌF Ìu>”ÌH ÌuÌ@”ÌL ÌuÌD”ÌN ÌuÌF”ÌO ÌuÌG”ÌP ÌuÌH”” Ìv” Ìv” Ìv” Ìv	‘”	 Ìw’” Ìx” Ìx’” Ìz” Ìz”” Ì{
+” Ì{” Ì{”  Ì{.œ” Ì|” Ì|” Ì|” Ì|” Ì|” Ì|”" Ì|”# Ì|”. Ì|*”3 Ì|/”4 Ì|0”6 Ì|2’” Ì}” Ì}—” Ì~” Ì~
+” Ì~” Ì~” Ì~”  Ì~”! Ì~‘”	 Ìœ” Ì” Ì” Ì”  Ì”! Ì”% Ì#”) Ì'”* Ì(”5 Ì3”: Ì8”ÌK ÌÌI”ÌM ÌÌK’” Ì€” Ì€—” Ì” Ì
+” Ì” Ì” Ì”0 Ì*”1 Ì+‘”	 Ì‚’” Ìƒ” Ìƒ˜” Ì†” Ì†” Ì†” Ì†” Ì†” Ì†)” Ì†+”" Ì†8˜” Ì‡” Ì‡
+” Ì‡” Ì‡”! Ì‡”# Ì‡”$ Ì‡”& Ì‡–” Ì‡” Ì‡
+” Ì” Ì”  Ì”! Ì” Ì‡” Ì‡
+” Ì‘” Ì‘” Ì‘” Ì‘”  Ì‘”" Ì‘”$ Ì‘”& Ì‘”, Ì‘”. Ì‘ ”0 Ì‘"”2 Ì‘$Ü ” Ì‡” Ì‡
+” Ì’”" Ì’”# Ì’”' Ì’”( Ì’”3 Ì’%”8 Ì’*”= Ì’/”> Ì’0”? Ì’1”Ì@ Ì’2”ÌE Ì’7”ÌF Ì’8”ÌG Ì’9”ÌH Ì’:”ÌQ Ì’ÌC”ÌR Ì’ÌD”ÌV Ì’ÌH–” Ì‡” Ì‡
+” Ì“” Ì“”  Ì“”" Ì“Ü ” Ì‡” Ì‡
+” Ì”” Ì”” Ì”” Ì””! Ì””# Ì””$ Ì””& Ì””+ Ì””- Ì””1 Ì”#”2 Ì”$”= Ì”/”ÌB Ì”4”ÌG Ì”9”ÌH Ì”:”ÌI Ì”;”ÌJ Ì”<”ÌO Ì”ÌA”ÌP Ì”ÌB”ÌQ Ì”ÌC”ÌR Ì”ÌD”Ì[ Ì”ÌM”Ì\ Ì”ÌN”Ìc Ì”ÌU”Ìe Ì”ÌW—” Ì‡” Ì‡
+” Ì•” Ì•” Ì•” Ì•”  Ì•—” Ì–” Ì–
+” Ì–”  Ì–”# Ì–”( Ì–”) Ì–’” Ì—” Ì—›” Ìˆ” Ìˆ
+” Ìˆ” Ìˆ” Ìˆ”  Ìˆ”( Ìˆ”) Ìˆ”. Ìˆ!”/ Ìˆ"”1 Ìˆ$–” Ìˆ” Ìˆ
+” Ì‰	” Ì‰” Ì‰” Ì‰˜” Ìˆ” Ìˆ
+” ÌŠ	” ÌŠ” ÌŠ”& ÌŠ”' ÌŠ”+ ÌŠ#Ü ” Ìˆ” Ìˆ
+” Ì‹	” Ì‹” Ì‹” Ì‹”  Ì‹”+ Ì‹#”0 Ì‹(”5 Ì‹-”6 Ì‹.”7 Ì‹/”8 Ì‹0”= Ì‹5”> Ì‹6”ÌC Ì‹;”ÌD Ì‹<”ÌE Ì‹=”ÌF Ì‹>”ÌK Ì‹ÌC’” Ìˆ” Ìˆ
+”” ÌŒ” ÌŒ
+” ÌŒ” ÌŒ–” ÌŒ” ÌŒ
+” Ì	” Ì” Ì” ÌÜ ” ÌŒ” ÌŒ
+” Ì	” Ì” Ì” Ì”  Ì”+ Ì#”0 Ì(”5 Ì-”6 Ì.”7 Ì/”8 Ì0”= Ì5”> Ì6”ÌC Ì;”ÌD Ì<”ÌE Ì=”ÌF Ì>”ÌO ÌÌG”ÌP ÌÌH”Ì] ÌÌU’” ÌŒ” ÌŒ
+’” Ì‡” Ì‡
+‘” Ì˜’” Ìš”- Ìš+’” Ì›” Ì›Ü ” Ìœ” Ìœ”' Ìœ”) Ìœ”1 Ìœ"”3 Ìœ$”6 Ìœ'”8 Ìœ)”= Ìœ.”? Ìœ0”ÌD Ìœ5”ÌE Ìœ6”ÌM Ìœ>”ÌO ÌœÌ@”ÌS ÌœÌD”ÌU ÌœÌF”Ì^ ÌœÌO”Ì_ ÌœÌP”Ìc ÌœÌT”Ìe ÌœÌV˜” Ìœ” Ìœ”  Ì”% Ì”& Ì”1 Ì”2 Ì”7 ÌÜ ” Ì” Ì”& Ì”( Ì”0 Ì!”2 Ì#”5 Ì&”7 Ì(”< Ì-”> Ì/”ÌC Ì4”ÌD Ì5”ÌL Ì=”ÌN Ì?”ÌR ÌÌC”ÌT ÌÌE”Ì] ÌÌN”Ì^ ÌÌO”Ìb ÌÌS”Ìd ÌÌU˜” Ì” Ì” ÌŸ”$ ÌŸ”% ÌŸ”0 ÌŸ”1 ÌŸ”5 ÌŸ–” Ì” Ì” Ì ”& Ì ”' Ì ”* Ì Ü ” Ì¡” Ì¡”' Ì¡”) Ì¡”1 Ì¡"”3 Ì¡$”6 Ì¡'”8 Ì¡)”= Ì¡.”? Ì¡0”ÌD Ì¡5”ÌE Ì¡6”ÌM Ì¡>”ÌO Ì¡Ì@”ÌS Ì¡ÌD”ÌU Ì¡ÌF”Ì^ Ì¡ÌO”Ì_ Ì¡ÌP”Ìb Ì¡ÌS”Ìd Ì¡ÌU˜” Ì¡” Ì¡”  Ì¢”% Ì¢”& Ì¢”1 Ì¢”2 Ì¢”6 Ì¢Ü ” Ì£” Ì£”& Ì£”( Ì£”0 Ì£!”2 Ì£#”5 Ì£&”7 Ì£(”< Ì£-”> Ì£/”ÌC Ì£4”ÌD Ì£5”ÌL Ì£=”ÌN Ì£?”ÌR Ì£ÌC”ÌT Ì£ÌE”Ì] Ì£ÌN”Ì^ Ì£ÌO”Ìa Ì£ÌR”Ìc Ì£ÌT˜” Ì£” Ì£” Ì¤”$ Ì¤”% Ì¤”0 Ì¤”1 Ì¤”6 Ì¤–” Ì£” Ì£” Ì¥”& Ì¥”' Ì¥”* Ì¥‘” Ì¦‘” Ì¨’” Ì©” Ì©	–” Ì©” Ì©	” Í” Í
+” Í” Í–” Ì©” Ì©	” Í” Í” Í” Í’” Ìª” Ìª–” Ìª” Ìª” Í” Í” Í” Í–” Ìª” Ìª” Í” Í” Í”  Í˜” Ìª” Ìª” Í”" Í”# Í”, Í ”- Í!”/ Í#˜” Ìª” Ìª” Í” Í” Í”- Í!”. Í"”4 Í(’” Ì«” Ì«’” Ì¬” Ì¬’” Ì«” Ì«–” Ì¬” Ì¬” ÌÁ	” ÌÁ” ÌÁ” ÌÁ’” Ì«” Ì«˜” Ì¬” Ì¬” ÌÂ	” ÌÂ” ÌÂ”( ÌÂ!”) ÌÂ"”/ ÌÂ(’” Ì«” Ì«Ü ” Ì¬” Ì¬” ÌÃ	” ÌÃ” ÌÃ” ÌÃ” ÌÃ”  ÌÃ”" ÌÃ”$ ÌÃ”) ÌÃ"”+ ÌÃ$”- ÌÃ&”/ ÌÃ(”2 ÌÃ+”4 ÌÃ-”6 ÌÃ/”8 ÌÃ1”> ÌÃ7”Ì@ ÌÃ9”ÌB ÌÃ;”ÌD ÌÃ=”” Ì­
+” Ì­”# Ì­”) Ì­–” Ì­
+” Ì­” Ì®” Ì®” Ì®” Ì®–” Ì­
+” Ì­” Ì¯” Ì¯” Ì¯” Ì¯” Ì­
+” Ì­” Ì°” Ì°” Ì°” Ì°”! Ì°”# Ì°”% Ì°”' Ì°!”, Ì°&”. Ì°(”0 Ì°*”2 Ì°,˜” Ì­
+” Ì­” Ì±”" Ì±”# Ì±”, Ì±&”- Ì±'”9 Ì±3˜” Ì­
+” Ì­” Ì²” Ì²” Ì²”& Ì² ”' Ì²!”. Ì²(–” Ì­
+” Ì­” Ì³” Ì³”  Ì³”" Ì³œ” Ì­
+” Ì­” Ì´” Ì´” Ì´” Ì´”  Ì´”! Ì´”% Ì´”& Ì´ ”: Ì´4”< Ì´6’” Ì­
+” Ì­’” Ì¶
+” Ì¶’” Ì¶
+” Ì¶”” Ì·
+” Ì·” Ì·” Ì·–” Ì·
+” Ì·” Ì¸” Ì¸” Ì¸” Ì¸˜” Ì·
+” Ì·” Ì¹” Ì¹” Ì¹”& Ì¹"”' Ì¹#”+ Ì¹'˜” Ì·
+” Ì·” Ìº” Ìº” Ìº”$ Ìº ”% Ìº!”0 Ìº,’” Ì·
+” Ì·’” Ì»
+” Ì»’” Ì»
+” Ì»’” Ì½
+” Ì½–” Ì½
+” Ì½” Ì¾” Ì¾” Ì¾” Ì¾–” Ì½
+” Ì½” Ì¿” Ì¿” Ì¿” Ì¿’” Ì½
+” Ì½’” Ì«” Ì«’” Ì¬” Ì¬’” ÌÅ”  ÌÅ˜” ÌÆ” ÌÆ” ÌÆ” ÌÆ” ÌÆ”  ÌÆ”! ÌÆ”# ÌÆ” ÌÔ	”( ÌÔ”) ÌÔ”+ ÌÔ”3 ÌÔ”5 ÌÔ”8 ÌÔ"”: ÌÔ$”? ÌÔ)”ÌA ÌÔ+”ÌF ÌÔ0”ÌG ÌÔ1”ÌP ÌÔ:”ÌR ÌÔ<’” ÌÅ”  ÌÅ–” ÌÆ” ÌÆ” ÌÌ	” ÌÌ” ÌÌ” ÌÌ’” ÌÅ”  ÌÅ•” ÌÆ” ÌÆ” ÌÍ	” ÌÍ” ÌÍÜ ” ÌÎ
+” ÌÎ” ÌÎ” ÌÎ” ÌÎ”% ÌÎ”( ÌÎ"”) ÌÎ#”* ÌÎ$”+ ÌÎ%”, ÌÎ&”- ÌÎ'”. ÌÎ(”/ ÌÎ)”0 ÌÎ*”1 ÌÎ+Ü ” ÌÏ
+” ÌÏ” ÌÏ” ÌÏ” ÌÏ”( ÌÏ"”+ ÌÏ%”, ÌÏ&”- ÌÏ'”. ÌÏ(”/ ÌÏ)”1 ÌÏ+”2 ÌÏ,”3 ÌÏ-”4 ÌÏ.”5 ÌÏ/‘” ÌĞ	’” ÌÅ”  ÌÅ˜” ÌÆ” ÌÆ” ÌÑ	” ÌÑ” ÌÑ” ÌÑ” ÌÑ”' ÌÑ ’” ÌÅ”  ÌÅš” ÌÆ” ÌÆ” ÌÒ	” ÌÒ” ÌÒ” ÌÒ” ÌÒ”( ÌÒ!”+ ÌÒ$”< ÌÒ5’” ÌÅ”  ÌÅ–” ÌÆ” ÌÆ” ÌÓ	” ÌÓ” ÌÓ” ÌÓ’” ÌÔ	”( ÌÔ” ÌÇ
+” ÌÇ” ÌÇ” ÌÇ”# ÌÇ”' ÌÇ”) ÌÇ ”2 ÌÇ)”3 ÌÇ*”: ÌÇ1”< ÌÇ3”= ÌÇ4”> ÌÇ5” ÌÈ
+” ÌÈ” ÌÈ” ÌÈ”# ÌÈ”( ÌÈ”* ÌÈ!”3 ÌÈ*”4 ÌÈ+”: ÌÈ1”< ÌÈ3”= ÌÈ4”> ÌÈ5” ÌÉ
+” ÌÉ” ÌÉ” ÌÉ”# ÌÉ”( ÌÉ”* ÌÉ!”3 ÌÉ*”4 ÌÉ+”; ÌÉ2”= ÌÉ4”> ÌÉ5”? ÌÉ6” ÌÊ
+” ÌÊ” ÌÊ” ÌÊ”# ÌÊ”( ÌÊ”* ÌÊ!”3 ÌÊ*”4 ÌÊ+”; ÌÊ2”= ÌÊ4”> ÌÊ5”? ÌÊ6’” ÌÅ” ÌÅ’” ÌÆ” ÌÆ”” ÌÖ” ÌÖ”# ÌÖ”+ ÌÖ–” ÌÖ” ÌÖ” Ì×” Ì×” Ì×” Ì×–” ÌÖ” ÌÖ” ÌØ” ÌØ” ÌØ” ÌØ–” ÌÖ” ÌÖ” ÌÙ” ÌÙ” ÌÙ” ÌÙ˜” ÌÖ” ÌÖ” ÌÚ” ÌÚ” ÌÚ”( ÌÚ ”) ÌÚ!”/ ÌÚ'˜” ÌÖ” ÌÖ” ÌÛ” ÌÛ” ÌÛ”" ÌÛ”# ÌÛ”( ÌÛ ˜” ÌÖ” ÌÖ” ÌÜ”" ÌÜ”# ÌÜ”, ÌÜ$”- ÌÜ%”4 ÌÜ,–” ÌÖ” ÌÖ” Ìİ” Ìİ”  Ìİ”" Ìİš” ÌÖ” ÌÖ” ÌŞ” ÌŞ” ÌŞ” ÌŞ”" ÌŞ”$ ÌŞ”& ÌŞ”( ÌŞ —” ÌÖ” ÌÖ” Ìß” Ìß” Ìß” Ìß”  Ìßœ” Ìà” Ìà” Ìà” Ìà” Ìà”! Ìà”$ Ìà ”& Ìà"”5 Ìà1”7 Ìà3”8 Ìà4”9 Ìà5’” Ìá
+” Ìá’” ÌÖ” ÌÖ’” Ìã” Ìã–” Ìã” Ìã” Ìí	” Ìí” Ìí” Ìíš” Ìã” Ìã” Ìî	” Ìî” Ìî” Ìî” Ìî”! Ìî”# Ìî”% Ìî”” Ìä
+” Ìä” Ìä”  Ìä–” Ìä
+” Ìä” Ìå” Ìå” Ìå” Ìå˜” Ìä
+” Ìä” Ìæ” Ìæ” Ìæ”& Ìæ"”' Ìæ#”+ Ìæ'˜” Ìä
+” Ìä” Ìç” Ìç” Ìç”$ Ìç ”% Ìç!”0 Ìç,’” Ìä
+” Ìä’” Ìè
+” Ìè’” Ìè
+” Ìè›” Ìé
+” Ìé” Ìé” Ìé”! Ìé”" Ìé”1 Ìé(”3 Ìé*”4 Ìé+”: Ìé1”> Ìé5–” Ìé
+” Ìé” Ìê” Ìê” Ìê” Ìê˜” Ìé
+” Ìé” Ìë” Ìë” Ìë”$ Ìë ”% Ìë!”1 Ìë-’” Ìé
+” Ìé’” Ìã” Ìã›” Ìğ” Ìğ” Ìğ” Ìğ”$ Ìğ ”& Ìğ"”' Ìğ#”- Ìğ)”2 Ìğ.”3 Ìğ/”5 Ìğ1˜” Ìñ
+” Ìñ”& Ìñ”( Ìñ”- Ìñ”/ Ìñ”0 Ìñ”2 Ìñ–” Ìñ
+” Ìñ” Ìø”$ Ìø”% Ìø”+ Ìø–” Ìñ
+” Ìñ” Ìù”+ Ìù”, Ìù”- Ìù˜” Ìñ
+” Ìñ” Ìú”- Ìú”. Ìú”7 Ìú#”8 Ìú$”> Ìú*”” Ìò” Ìò”$ Ìò”( Ìò–” Ìò” Ìò” Ìó”% Ìó”& Ìó”( Ìó’” Ìò” Ìò”” Ìô” Ìô”$ Ìô”, Ìô–” Ìô” Ìô” Ìõ”% Ìõ”& Ìõ”( Ìõ˜” Ìô” Ìô” Ìö”& Ìö”' Ìö”0 Ìö"”1 Ìö#”= Ìö/’” Ìô” Ìô’” Ìñ
+” Ìñ‘” Ìû	‘” Ìû˜” Ìü
+” Ìü”$ Ìü”& Ìü”+ Ìü”- Ìü”/ Ìü”1 Ìü–” Ìü
+” Ìü” Í”" Í”# Í”( Í–” Ìü
+” Ìü” Í”) Í”* Í”+ Íš” Ìü
+” Ìü” Í”$ Í”% Í”' Í”- Í”/ Í”1 Í”3 Í!˜” Ìü
+” Ìü” Í”* Í”+ Í”8 Í&”9 Í'”> Í,˜” Ìü
+” Ìü” Í”& Í”' Í”/ Í”0 Í”3 Í!™” Ìü
+” Ìü” Í”* Í”+ Í”, Í”6 Í,”8 Í.”: Í0˜” Í”  Í”! Í”2 Í"”3 Í#”= Í-”> Í.”? Í/’” Í
+” Í’” Ìı” Ìı’”( Ìş”0 Ìş“”ÌH Ìÿ”ÌO Ìÿ”ÌV Ìÿ””4 Í ”7 Í ”9 Í ”= Í Ü ”4 Í”< Í”> Í”ÌB Í ”ÌC Í!”ÌI Í'”ÌN Í,”ÌW Í5”ÌX Í6”Ì_ Í=”Ì` Í>”Ìa Í?”Ìb ÍÌ@”Ìc ÍÌA”Ìf ÍÌJ”Ìh ÍÌL”Ìi ÍÌM”Ìm ÍÌQ”Ìn ÍÌR”Ìx ÍÌ\”Ìy ÍÌ]”Ì} ÍÌa”Ì~ ÍÌb”Ì ÍÌc”Ì€ ÍÌd”Ì ÍÌe”Ì‚ ÍÌf”Ì‹ ÍÌo•”4 Í”< Í”> Í”ÌA Í%”ÌC Í'•”8 Í”> Í”? Í”ÌF Í"”ÌG Í#””< Í”? Í”ÌA Í”ÌV Í0š”< Í”ÌB Í”ÌD Í”ÌF Í ”ÌK Í%”ÌM Í'”ÌQ Í+”ÌR Í,”ÌT Í.”ÌV Í0“”9 Í”: Í”; Í’”4 Í”5 Í‘”1 Í””8 Í ”; Í ”= Í ”ÌA Í Ü ”8 Í”Ì@ Í”ÌB Í”ÌF Í ”ÌG Í!”ÌM Í'”ÌR Í,”Ì[ Í5”Ì\ Í6”Ìc Í=”Ìd Í>”Ìe Í?”Ìf ÍÌ@”Ìg ÍÌA”Ìj ÍÌJ”Ìl ÍÌL”Ìm ÍÌM”Ìq ÍÌQ”Ìr ÍÌR”Ì| ÍÌ\”Ì} ÍÌ]”Ì ÍÌa”Ì‚ ÍÌb”Ìƒ ÍÌc”Ì„ ÍÌd”Ì… ÍÌe”Ì† ÍÌf”Ì ÍÌo•”8 Í”Ì@ Í”ÌB Í”ÌE Í%”ÌG Í'•”< Í”ÌB Í”ÌC Í”ÌJ Í"”ÌK Í#””Ì@ Í”ÌC Í”ÌE Í”ÌZ Í0š”Ì@ Í”ÌF Í”ÌH Í”ÌJ Í ”ÌO Í%”ÌQ Í'”ÌU Í+”ÌV Í,”ÌX Í.”ÌZ Í0“”= Í”> Í”? Í’”8 Í”9 Í””4 Í ”7 Í ”9 Í ”= Í ’”$ Ìş”, Ìş’”  Ìş”( Ìş”; Ìı”? Ìı”Ì@ Ìı”ÌO Ìı(”ÌQ Ìı*”Ìk Í
+”Ìl Í
+”Ìp Í
+”Ìr Í
+”Ìt Í
+!”Ìu Í
+"”Ìy Í
+&”Ìz Í
+'”Ì| Í
+)’” Ìı” Ìı’” Ìü
+” Ìü‘” Í	˜”, Í”8 Í”? Í”ÌA Í”ÌJ Í ”ÌL Í"”ÌM Í#”ÌO Í%”” Í”% Í ”' Í"”( Í#”” Í”! Í ”# Í"”$ Í#’” Ìª” Ìª–” Í” Í
+” Í” Í”% Í”' Í!’” Í” Í–” Í” Í” ÍA	”$ ÍA”% ÍA”* ÍA–” Í” Í” ÍB	”% ÍB”& ÍB”+ ÍB–” Í” Í” ÍC	”& ÍC”' ÍC”) ÍC˜” Í” Í” ÍD	”. ÍD”/ ÍD”8 ÍD"”9 ÍD#”= ÍD'–” Í” Í” ÍE	”+ ÍE”, ÍE”. ÍE” Í” Í” ÍF	”% ÍF”& ÍF”( ÍF”. ÍF”0 ÍF”2 ÍF”4 ÍF”9 ÍF#”; ÍF%”ÌL ÍF6”ÌN ÍF8”” Í
+” Í”$ Í”, Í–” Í
+” Í” Í ”% Í ”& Í ”( Í ˜” Í
+” Í” Í!”' Í!”( Í!”2 Í!"”3 Í!#”7 Í!'˜” Í
+” Í” Í"”& Í"”' Í"”0 Í" ”1 Í"!”< Í",š” Í
+” Í” Í#”# Í#”$ Í#”& Í#”, Í#”. Í#”0 Í# ”2 Í#"’” Í
+” Í˜” Í%
+” Í%”$ Í%”& Í%”+ Í%”- Í%”. Í%”0 Í%–” Í%
+” Í%” Í3”" Í3”# Í3”) Í3–” Í%
+” Í%” Í4”) Í4”* Í4”+ Í4˜” Í%
+” Í%” Í5”& Í5”' Í5”/ Í5”0 Í5”3 Í5!’” Í&” Í&’”( Í)”0 Í)“”ÌH Í*”ÌS Í*”ÌZ Í*””4 Í+”; Í+”= Í+”ÌA Í+!œ”4 Í,”< Í,”> Í,”ÌA Í,'”ÌC Í,)”ÌD Í,*”ÌH Í,.”ÌI Í,/”ÌQ Í,7”ÌR Í,8”ÌV Í,<”ÌW Í,=‘”1 Í-””8 Í+”? Í+”ÌA Í+”ÌE Í+!œ”8 Í,”Ì@ Í,”ÌB Í,”ÌE Í,'”ÌG Í,)”ÌH Í,*”ÌL Í,.”ÌM Í,/”ÌU Í,7”ÌV Í,8”ÌZ Í,<”Ì[ Í,=””4 Í+”; Í+”= Í+”ÌA Í+!’”$ Í)”, Í)’”  Í)”( Í)Ü ”; Í'”? Í'”Ì@ Í'”ÌK Í'”ÌL Í'”ÌR Í'%”ÌS Í'&”ÌT Í''”ÌU Í'(”ÌW Í'*”ÌX Í'+”ÌY Í',”ÌZ Í'-”Ì` Í'3”Ìe Í'8”Ìr Í'ÌE”Ìs Í'ÌF”Ìw Í'ÌJ”Ìx Í'ÌK”Ì’ Í0”Ì“ Í0”Ì— Í0 ”Ì™ Í0"”Ì› Í0$”Ìœ Í0%”Ì  Í0)”Ì¡ Í0*”Ì£ Í0,’” Í&” Í&’” Í%
+” Í%”” Í7
+” Í7”/ Í7”3 Í7–” Í7
+” Í7” Í8”$ Í8”% Í8”+ Í8–” Í7
+” Í7” Í9”% Í9”& Í9”( Í9–” Í7
+” Í7” Í:”' Í:”( Í:”* Í:˜” Í7
+” Í7” Í;”. Í;”/ Í;”8 Í;&”9 Í;'”ÌD Í;2˜” Í7
+” Í7” Í<”( Í<”) Í<”2 Í< ”3 Í<!”Ì@ Í<.–” Í7
+” Í7” Í=”+ Í=”, Í=”. Í=š” Í7
+” Í7” Í>”% Í>”& Í>”( Í>”+ Í>”- Í>”/ Í>”1 Í>” Í7
+” Í7” Í?”& Í?”' Í?”* Í?”, Í?”- Í?”1 Í?”2 Í? ”ÌB Í?0”ÌE Í?3”ÌJ Í?8’” Í7
+” Í7’” Í” Í‘” ÍG’” ÍI”+ ÍI%‘” ÍG’” ÍI”+ ÍI%–” ÍJ” ÍJ
+” ÍJ” ÍJ”) ÍJ#”+ ÍJ%’” ÍK” ÍK–” ÍK” ÍK” Í‰	”$ Í‰”% Í‰”+ Í‰–” ÍK” ÍK” ÍŠ	”% ÍŠ”& ÍŠ”, ÍŠ˜” ÍK” ÍK” Í‹	”- Í‹”. Í‹”7 Í‹!”8 Í‹"”; Í‹%’” ÍL
+” ÍL–” ÍL
+” ÍL” ÍM”$ ÍM”% ÍM”+ ÍM–” ÍL
+” ÍL” ÍN”+ ÍN”, ÍN”- ÍN–” ÍL
+” ÍL” ÍO”. ÍO”/ ÍO”Ì@ ÍO.Ü ” ÍL
+” ÍL” ÍP”& ÍP”' ÍP”* ÍP”, ÍP”/ ÍP”3 ÍP!”4 ÍP"”ÌH ÍP6”ÌK ÍP9”ÌP ÍP>”ÌQ ÍP?”ÌR ÍPÌ@”ÌS ÍPÌA’” ÍL
+” ÍL˜” ÍR
+” ÍR”& ÍR”( ÍR”- ÍR”/ ÍR”1 ÍR”3 ÍR–” ÍR
+” ÍR” Í„”$ Í„”% Í„”+ Í„–” ÍR
+” ÍR” Í…”& Í…”' Í…”) Í…˜” ÍR
+” ÍR” Í†”. Í†”/ Í†”8 Í†$”9 Í†%”= Í†)” ÍR
+” ÍR” Í‡”+ Í‡”, Í‡”. Í‡”5 Í‡!”7 Í‡#”9 Í‡%”; Í‡'”ÌC Í‡/”ÌE Í‡1”ÌG Í‡3”ÌI Í‡5”” ÍS” ÍS”$ ÍS”* ÍS–” ÍS” ÍS” ÍT”% ÍT”& ÍT”( ÍT˜” ÍS” ÍS” ÍU”' ÍU”( ÍU”2 ÍU$”3 ÍU%”7 ÍU)˜” ÍS” ÍS” ÍV”& ÍV”' ÍV”0 ÍV"”1 ÍV#”< ÍV.–” ÍS” ÍS” ÍW”" ÍW”# ÍW”) ÍW˜” ÍS” ÍS” ÍX”& ÍX”' ÍX”0 ÍX"”1 ÍX#”7 ÍX)’” ÍS” ÍS˜” ÍZ” ÍZ”& ÍZ”( ÍZ”- ÍZ”/ ÍZ”1 ÍZ”3 ÍZ –” ÍZ” ÍZ” Íy”$ Íy”% Íy”+ Íy’” Í[” Í[˜”  Í^”# Í^”+ Í^”- Í^”2 Í^”4 Í^”6 Í^!”8 Í^#–”  Í^”# Í^”$ Íl”) Íl”* Íl”0 Íl–”  Í^”# Í^”$ Ím”+ Ím”, Ím”. ÍmÜ ”  Í^”# Í^”$ Ín”3 Ín"”4 Ín#”8 Ín'”= Ín,”ÌF Ín5”ÌG Ín6”ÌH Ín7”ÌI Ín8”ÌW ÍnÌF”ÌX ÍnÌG”Ì\ ÍnÌK”Ì] ÍnÌL”Ì^ ÍnÌM”Ì_ ÍnÌN”Ì` ÍnÌO”Ìi ÍnÌX”Ìj ÍnÌY”Ìu ÍnÌd–”  Í^”# Í^”$ Ío”0 Ío”1 Ío ”3 Ío"•”  Í^”# Í^”$ Íp”* Íp”+ Íp”$ Íq”) Íq”+ Íq”/ Íq”4 Íq$”= Íq-”> Íq.”? Íq/”Ì@ Íq0”ÌC Íq3”ÌD Íq4”ÌE Íq5”ÌF Íq6”ÌG Íq7Ü ”$ Ír”) Ír”+ Ír”/ Ír”4 Ír$”= Ír-”> Ír.”? Ír/”Ì@ Ír0”ÌL Ír<”ÌM Ír=”ÌQ ÍrÌA”ÌR ÍrÌB”ÌS ÍrÌC”ÌT ÍrÌD”ÌU ÍrÌE”ÌZ ÍrÌJ”Ì[ ÍrÌK”Ìf ÍrÌV‘”! Ís”  Í^”# Í^”$ Ít”+ Ít”, Ít”/ Ít”1 Ít ”2 Ít!”6 Ít%”7 Ít&”ÌC Ít2”ÌD Ít3”ÌH Ít7”ÌI Ít8—”  Í_”$ Í_”, Í_”8 Í_%”9 Í_&”= Í_*”> Í_+–”  Í_”$ Í_”% Í`”- Í`”. Í` ”0 Í`"’” Í_”  Í_—”  Ía”$ Ía”, Ía”8 Ía%”9 Ía&”= Ía*”> Ía+–”  Ía”$ Ía”% Íb”- Íb”. Íb ”0 Íb"˜”  Ía”$ Ía”% Íc”/ Íc!”0 Íc"”: Íc,”; Íc-”ÌA Íc3™”  Ía”$ Ía”% Íd”. Íd ”/ Íd!”; Íd-”< Íd.”Ì@ Íd2”ÌA Íd3’” Ía”  Ía’”  Íe”% Íe’” Íe”! Íe–”  Íf”$ Íf”( Íf”- Íf!”6 Íf*”8 Íf,””, Íg”0 Íg”8 Íg”< Íg–”, Íg”0 Íg”1 Íh”9 Íh!”: Íh"”< Íh$˜”, Íg”0 Íg”1 Íi”: Íi"”; Íi#”ÌD Íi,”ÌE Íi-”ÌQ Íi9’”( Íg”, Íg‘”! Íj‘”! Íj’” Í^” Í^›”; Í\”? Í\”Ì@ Í\”ÌI Í\”Ìc Ív”Ìd Ív”Ìh Ív”Ìj Ív”Ìl Ív”Ìm Ív ”Ìq Ív$’” Í[” Í[’” ÍZ” ÍZ”” Í{” Í{”/ Í{”3 Í{–” Í{” Í{” Í|”$ Í|”% Í|”+ Í|–” Í{” Í{” Í}”% Í}”& Í}”( Í}–” Í{” Í{” Í~”' Í~”( Í~”* Í~˜” Í{” Í{” Í”. Í”/ Í”8 Í(”9 Í)”ÌD Í4˜” Í{” Í{” Í€”( Í€”) Í€”2 Í€"”3 Í€#”Ì@ Í€0–” Í{” Í{” Í”+ Í”, Í”. ÍÜ ” Í{” Í{” Í‚”& Í‚”' Í‚”* Í‚”, Í‚”/ Í‚”3 Í‚#”4 Í‚$”ÌH Í‚8”ÌK Í‚;”ÌP Í‚Ì@”ÌQ Í‚ÌA”ÌR Í‚ÌB”ÌS Í‚ÌC’” Í{” Í{’” ÍR
+” ÍR’” ÍK” ÍK‘” ÍŒ‘” ÍŒ’” Ì©” Ì©	‘” ÍÔrF–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜë‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ‘”  Íš ‘”  Í› ‘”  Íœ ‘”  Í ‘”  Í ‘”  ÍŸ ‘”  Í  ‘”  Í¡ ‘”  Í¢ ‘”  Í£ ‘”  Í¤ ‘”  Í¥ ‘”  Í¦ ‘”  Í§ ‘”  Í¨ ‘”  Í© ‘”  Íª ‘”  Í« ‘”  Í¬ ‘”  Í­ ‘”  Í® ‘”  Í¯ ‘”  Í° ‘”  Í± ‘”  Í² ‘”  Í³ ‘”  Í´ ‘”  Íµ ‘”  Í¶ ‘”  Í· ‘”  Í¸ ‘”  Í¹ ‘”  Íº ‘”  Í» ‘”  Í¼ ‘”  Í½ ‘”  Í¾ ‘”  Í¿ ‘”  ÍÀ ‘”  ÍÁ ‘”  ÍÂ ‘”  ÍÃ ‘”  ÍÄ ‘”  ÍÅ ‘”  ÍÆ ‘”  ÍÇ ‘”  ÍÈ ‘”  ÍÉ ‘”  ÍÊ ‘”  ÍË ‘”  ÍÌ ‘”  ÍÍ ‘”  ÍÎ ‘”  ÍÏ ‘”  ÍĞ ‘”  ÍÑ ‘”  ÍÒ ‘”  ÍÓ ‘”  ÍÔ ‘”  ÍÕ ‘”  ÍÖ ‘”  Í× ‘”  ÍØ ‘”  ÍÙ ‘”  ÍÚ ‘”  ÍÛ ‘”  ÍÜ ‘”  Íİ ‘”  ÍŞ ‘”  Íß ‘”  Íà ‘”  Íá ‘”  Íâ ‘”  Íã ‘”  Íä ‘”  Íå ‘”  Íæ ‘”  Íç ‘”  Íè ‘”  Íé ‘”  Íê ‘”  Íë ‘”  Íì ‘”  Íí ‘”  Íî ‘”  Íï ‘”  Íğ ‘”  Íñ ‘”  Íò ‘”  Íó ‘”  Íô ‘”  Íõ ‘”  Íö ‘”  Í÷ ‘”  Íø ‘”  Íù ‘”  Íú ‘”  Íû ‘”  Íü ‘”  Íı ‘”  Íş ‘”  Íÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ‘”  Íš ‘”  Í› ‘”  Íœ ‘”  Í ‘”  Í ‘”  ÍŸ ‘”  Í  ‘”  Í¡ ‘”  Í¢ ‘”  Í£ ‘”  Í¤ ‘”  Í¥ ‘”  Í¦ ‘”  Í§ ‘”  Í¨ ‘”  Í© ‘”  Íª ‘”  Í« ‘”  Í¬ ‘”  Í­ ‘”  Í® ‘”  Í¯ ‘”  Í° ‘”  Í± ‘”  Í² ‘”  Í³ ‘”  Í´ ‘”  Íµ ‘”  Í¶ ‘”  Í· ‘”  Í¸ ‘”  Í¹ ‘”  Íº ‘”  Í» ‘”  Í¼ ‘”  Í½ ‘”  Í¾ ‘”  Í¿ ‘”  ÍÀ ‘”  ÍÁ ‘”  ÍÂ ‘”  ÍÃ ‘”  ÍÄ ‘”  ÍÅ ‘”  ÍÆ ‘”  ÍÇ ‘”  ÍÈ ‘”  ÍÉ ‘”  ÍÊ ‘”  ÍË ‘”  ÍÌ ‘”  ÍÍ ‘”  ÍÎ ‘”  ÍÏ ‘”  ÍĞ ‘”  ÍÑ ‘”  ÍÒ ‘”  ÍÓ ‘”  ÍÔ ‘”  ÍÕ ‘”  ÍÖ ‘”  Í× ‘”  ÍØ ‘”  ÍÙ ‘”  ÍÚ ‘”  ÍÛ ‘”  ÍÜ ‘”  Íİ ‘”  ÍŞ ‘”  Íß ‘”  Íà ‘”  Íá ‘”  Íâ ‘”  Íã ‘”  Íä ‘”  Íå ‘”  Íæ ‘”  Íç ‘”  Íè ‘”  Íé ‘”  Íê ÔrG’§missing¦pluginÃ¦genAbcÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCachešÔrI•¤type¥start£endªspecifiers¦source±ImportDeclarationÌ€Ì¢‘ÔrJ”¤type¥start£end¥local¶ImportDefaultSpecifierÌ‡ÌÔrK”¤type¥start£end¤nameªIdentifierÌ‡Ì¦routerÔrL•¤type¥start£end¥value£raw§LiteralÌ“Ì¡¬@ohos.router®"@ohos.router"I±ImportDeclarationÌ¤ÌÒ‘J¶ImportDefaultSpecifierÌ«Ì·KªIdentifierÌ«Ì·¬promptActionL§LiteralÌ½ÌÑ²@ohos.promptAction´"@ohos.promptAction"I±ImportDeclarationÌÔÍ‘ÔrM•¤type¥start£end¨imported¥local¯ImportSpecifierÌİÌæKªIdentifierÌİÌæ©SOSStatusKªIdentifierÌİÌæ©SOSStatusL§LiteralÌîÍ °../model/SOSInfo²'../model/SOSInfo'I±ImportDeclarationÍÍ8‘M¯ImportSpecifierÍÍKªIdentifierÍÍ­RescuerStatusKªIdentifierÍÍ­RescuerStatusL§LiteralÍ!Í7´../model/RescuerInfo¶'../model/RescuerInfo'I±ImportDeclarationÍ:Í_‘M¯ImportSpecifierÍCÍGKªIdentifierÍCÍG¤RoleKªIdentifierÍCÍG¤RoleL§LiteralÍOÍ^­../model/Role¯'../model/Role'I±ImportDeclarationÍaÍà–M¯ImportSpecifierÍjÍtKªIdentifierÍjÍtªgetSOSListKªIdentifierÍjÍtªgetSOSListM¯ImportSpecifierÍvÍ„KªIdentifierÍvÍ„®getRescuerListKªIdentifierÍvÍ„®getRescuerListM¯ImportSpecifierÍ†ÍKªIdentifierÍ†ÍªassignTaskKªIdentifierÍ†ÍªassignTaskM¯ImportSpecifierÍ’Í¢KªIdentifierÍ’Í¢°getLoggedInPhoneKªIdentifierÍ’Í¢°getLoggedInPhoneM¯ImportSpecifierÍ¤Í²KªIdentifierÍ¤Í²®getUserByPhoneKªIdentifierÍ¤Í²®getUserByPhoneM¯ImportSpecifierÍ´ÍÂKªIdentifierÍ´ÍÂ®setCurrentRoleKªIdentifierÍ´ÍÂ®setCurrentRoleL§LiteralÍÊÍß³../utils/ApiServiceµ'../utils/ApiService'I±ImportDeclarationÍâÍ‘M¯ImportSpecifierÍëÍòKªIdentifierÍëÍò§SOSCardKªIdentifierÍëÍò§SOSCardL§LiteralÍúÍµ../components/SOSCard·'../components/SOSCard'I±ImportDeclarationÍÍL‘M¯ImportSpecifierÍÍ(KªIdentifierÍÍ(«RescuerCardKªIdentifierÍÍ(«RescuerCardL§LiteralÍ0ÍK¹../components/RescuerCard»'../components/RescuerCard'I±ImportDeclarationÍNÍˆ‘M¯ImportSpecifierÍWÍcKªIdentifierÍWÍc¬BottomNavBarKªIdentifierÍWÍc¬BottomNavBarL§LiteralÍkÍ‡º../components/BottomNavBar¼'../components/BottomNavBar'I±ImportDeclarationÍŠÍı–M¯ImportSpecifierÍ“ÍœKªIdentifierÍ“Íœ©AppColorsKªIdentifierÍ“Íœ©AppColorsM¯ImportSpecifierÍÍªKªIdentifierÍÍª¬getRoleColorKªIdentifierÍÍª¬getRoleColorM¯ImportSpecifierÍ¬ÍºKªIdentifierÍ¬Íº®getRoleBgColorKªIdentifierÍ¬Íº®getRoleBgColorM¯ImportSpecifierÍ¼ÍÈKªIdentifierÍ¼ÍÈ¬getRoleLabelKªIdentifierÍ¼ÍÈ¬getRoleLabelM¯ImportSpecifierÍÊÍÖKªIdentifierÍÊÍÖ¬getRoleEmojiKªIdentifierÍÊÍÖ¬getRoleEmojiM¯ImportSpecifierÍØÍãKªIdentifierÍØÍã«getRolePageKªIdentifierÍØÍã«getRolePageL§LiteralÍëÍü¯../common/Theme±'../common/Theme'

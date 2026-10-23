@@ -1,0 +1,17 @@
+{
+  "app": {
+    "bundleName": "com.xunan.floodrescue",
+    "vendor": "xunan",
+    "versionCode": 1000000,
+    "versionName": "1.0.0",
+    "icon": "$media:temp_icon",
+    "label": "$string:app_name",
+    "minAPIVersion": 12,
+    "targetAPIVersion": 12,
+    "apiReleaseType": "Release12",
+    "debug": false,
+    "car": {
+      "minAPIVersion": 12
+    }
+  }
+}

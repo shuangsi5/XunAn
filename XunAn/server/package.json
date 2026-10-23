@@ -1,0 +1,16 @@
+{
+  "name": "xunan-server",
+  "version": "1.0.0",
+  "description": "汛安智慧防汛应急救援系统 - 后端 API 服务",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "mysql2": "^3.11.0",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1"
+  }
+}

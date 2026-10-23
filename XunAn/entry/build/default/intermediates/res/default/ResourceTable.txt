@@ -1,0 +1,16 @@
+string EntryAbility_desc 0x01000002
+string EntryAbility_label 0x01000003
+string app_name 0x01000000
+string approx_location_permission_reason 0x01000004
+string location_permission_reason 0x01000005
+string module_desc 0x01000006
+color background 0x01000007
+color card_background 0x01000008
+color danger 0x01000009
+color primary 0x0100000a
+color start_window_background 0x0100000b
+color success 0x0100000c
+color warning 0x0100000d
+media temp_icon 0x01000001
+profile main_pages 0x0100000e
+profile network_config 0x0100000f

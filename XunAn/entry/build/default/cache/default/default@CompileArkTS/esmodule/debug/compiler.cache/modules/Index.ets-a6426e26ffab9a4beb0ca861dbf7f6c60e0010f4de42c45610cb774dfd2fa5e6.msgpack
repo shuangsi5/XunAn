@@ -1,0 +1,705 @@
+Ôr@Ÿªassertions¤code´customTransformCache¬dependencies¢id¤meta±moduleSideEffects¬originalCode±originalSourcemap«resolvedIds®sourcemapChainµsyntheticNamedExportsµtransformDependencies®transformFiles¨cacheAstÔrAÚK˜if (!("finalizeConstruction" in ViewPU.prototype)) {
+    Reflect.set(ViewPU.prototype, "finalizeConstruction", () => { });
+}
+import router from "@ohos.router";
+import promptAction from "@ohos.promptAction";
+import { Role } from '../model/Role';
+import { getLoggedInPhone, getUserByPhone, clearLoggedIn, setCurrentRole } from '../utils/ApiService';
+import { AppColors, getRoleLabel, getRoleEmoji, getRoleBgColor, getRolePage } from '../common/Theme';
+function getRoleSubtitle(role) {
+    if (role === Role.CITIZEN) {
+        return 'å‘å¸ƒæ±‚æ•‘ä¿¡æ¯';
+    }
+    else if (role === Role.RESCUER) {
+        return 'æ¥æ”¶ä»»åŠ¡å¹¶å‰å¾€æ•‘æ´';
+    }
+    return 'è°ƒåº¦æŒ‡æŒ¥ä¸ç›‘æ§';
+}
+function getDefaultRole(roles) {
+    if (roles.includes(Role.CITIZEN)) {
+        return Role.CITIZEN;
+    }
+    else if (roles.includes(Role.RESCUER)) {
+        return Role.RESCUER;
+    }
+    else if (roles.includes(Role.COMMAND)) {
+        return Role.COMMAND;
+    }
+    return Role.CITIZEN;
+}
+class Index extends ViewPU {
+    constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
+        super(parent, __localStorage, elmtId, extraInfo);
+        if (typeof paramsLambda === "function") {
+            this.paramsGenerator_ = paramsLambda;
+        }
+        this.__currentUser = new ObservedPropertyObjectPU(null, this, "currentUser");
+        this.__displayRoles = new ObservedPropertyObjectPU([], this, "displayRoles");
+        this.__isAutoNavigated = new ObservedPropertySimplePU(false, this, "isAutoNavigated");
+        this.setInitiallyProvidedValue(params);
+        this.finalizeConstruction();
+    }
+    setInitiallyProvidedValue(params) {
+        if (params.currentUser !== undefined) {
+            this.currentUser = params.currentUser;
+        }
+        if (params.displayRoles !== undefined) {
+            this.displayRoles = params.displayRoles;
+        }
+        if (params.isAutoNavigated !== undefined) {
+            this.isAutoNavigated = params.isAutoNavigated;
+        }
+    }
+    updateStateVars(params) {
+    }
+    purgeVariableDependenciesOnElmtId(rmElmtId) {
+        this.__currentUser.purgeDependencyOnElmtId(rmElmtId);
+        this.__displayRoles.purgeDependencyOnElmtId(rmElmtId);
+        this.__isAutoNavigated.purgeDependencyOnElmtId(rmElmtId);
+    }
+    aboutToBeDeleted() {
+        this.__currentUser.aboutToBeDeleted();
+        this.__displayRoles.aboutToBeDeleted();
+        this.__isAutoNavigated.aboutToBeDeleted();
+        SubscriberManager.Get().delete(this.id__());
+        this.aboutToBeDeletedInternal();
+    }
+    get currentUser() {
+        return this.__currentUser.get();
+    }
+    set currentUser(newValue) {
+        this.__currentUser.set(newValue);
+    }
+    get displayRoles() {
+        return this.__displayRoles.get();
+    }
+    set displayRoles(newValue) {
+        this.__displayRoles.set(newValue);
+    }
+    get isAutoNavigated() {
+        return this.__isAutoNavigated.get();
+    }
+    set isAutoNavigated(newValue) {
+        this.__isAutoNavigated.set(newValue);
+    }
+    aboutToAppear() {
+        this.loadUser();
+    }
+    async loadUser() {
+        try {
+            const phone = getLoggedInPhone();
+            if (!phone) {
+                return;
+            }
+            const user = await getUserByPhone(phone);
+            if (user) {
+                this.currentUser = user;
+                // å¼ºåˆ¶æŒ‰æ­£ç¡®é¡ºåºæ˜¾ç¤ºï¼šç¾¤ä¼— â†’ æ•‘æ´äººå‘˜ â†’ æŒ‡æŒ¥éƒ¨
+                const roleOrder = [Role.CITIZEN, Role.RESCUER, Role.COMMAND];
+                this.displayRoles = roleOrder.filter((role) => user.roles.includes(role));
+                // å·²ç™»å½•ç”¨æˆ·è‡ªåŠ¨è·³è½¬åˆ°é»˜è®¤èº«ä»½é¡µé¢ï¼ˆåªæ‰§è¡Œä¸€æ¬¡ï¼‰
+                if (!this.isAutoNavigated && this.displayRoles.length > 0) {
+                    this.isAutoNavigated = true;
+                    let defaultRole = getDefaultRole(this.displayRoles);
+                    setCurrentRole(defaultRole);
+                    router.replaceUrl({ url: getRolePage(defaultRole) });
+                }
+            }
+        }
+        catch (err) {
+            console.error('åŠ è½½ç”¨æˆ·ä¿¡æ¯å¤±è´¥', JSON.stringify(err));
+            promptAction.showToast({ message: 'åŠ è½½ç”¨æˆ·ä¿¡æ¯å¤±è´¥ï¼Œè¯·é‡æ–°ç™»å½•' });
+        }
+    }
+    logout() {
+        clearLoggedIn();
+        this.currentUser = null;
+        this.displayRoles = [];
+        router.replaceUrl({ url: 'pages/LoginPage' });
+    }
+    selectRole(role) {
+        try {
+            setCurrentRole(role);
+            router.pushUrl({ url: getRolePage(role) });
+        }
+        catch (err) {
+            console.error('è·³è½¬å¤±è´¥', JSON.stringify(err));
+            promptAction.showToast({ message: 'é¡µé¢è·³è½¬å¤±è´¥ï¼Œè¯·é‡è¯•' });
+        }
+    }
+    goToProfile() {
+        try {
+            router.pushUrl({ url: 'pages/ProfilePage' });
+        }
+        catch (err) {
+            console.error('è·³è½¬ä¸ªäººä¸­å¿ƒå¤±è´¥', JSON.stringify(err));
+            promptAction.showToast({ message: 'é¡µé¢è·³è½¬å¤±è´¥' });
+        }
+    }
+    goToLogin() {
+        try {
+            router.pushUrl({ url: 'pages/LoginPage' });
+        }
+        catch (err) {
+            console.error('è·³è½¬ç™»å½•é¡µå¤±è´¥', JSON.stringify(err));
+        }
+    }
+    goToQuickSOS() {
+        try {
+            setCurrentRole(Role.CITIZEN);
+            router.pushUrl({ url: 'pages/CitizenPage' });
+        }
+        catch (err) {
+            console.error('å¿«é€Ÿæ±‚æ•‘è·³è½¬å¤±è´¥', JSON.stringify(err));
+            promptAction.showToast({ message: 'è·³è½¬å¤±è´¥ï¼Œè¯·é‡è¯•' });
+        }
+    }
+    // é¸¿è’™åŸç”Ÿå¼é¡µé¢è½¬åœºï¼špush ä»å³æ»‘å…¥ã€pop ä»å·¦è¿”å›ï¼Œæ—§é¡µé¢æ·¡å‡ºå½¢æˆè§†å·®
+    pageTransition() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransition.create();
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionEnter.create({ duration: 400, curve: Curve.Friction, type: RouteType.Push });
+            PageTransitionEnter.slide(SlideEffect.Right);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionExit.create({ duration: 400, curve: Curve.Friction, type: RouteType.Push });
+            PageTransitionExit.slide(SlideEffect.Left);
+            PageTransitionExit.opacity(0.6);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionEnter.create({ duration: 400, curve: Curve.Friction, type: RouteType.Pop });
+            PageTransitionEnter.slide(SlideEffect.Left);
+        }, null);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            PageTransitionExit.create({ duration: 400, curve: Curve.Friction, type: RouteType.Pop });
+            PageTransitionExit.slide(SlideEffect.Right);
+            PageTransitionExit.opacity(0.6);
+        }, null);
+        PageTransition.pop();
+    }
+    initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (this.currentUser) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                        Column.create({ space: 8 });
+                        // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                        Column.width('100%');
+                        // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                        Column.height('100%');
+                        // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                        Column.backgroundColor(AppColors.bg);
+                        // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                        Column.alignItems(HorizontalAlign.Center);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        // ç”¨æˆ·ä¿¡æ¯æ 
+                        Row.create();
+                        // ç”¨æˆ·ä¿¡æ¯æ 
+                        Row.width('85%');
+                        // ç”¨æˆ·ä¿¡æ¯æ 
+                        Row.padding({ top: 16, bottom: 4 });
+                    }, Row);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Column.create({ space: 2 });
+                        Column.alignItems(HorizontalAlign.Start);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create(`æ¬¢è¿ï¼Œ${this.currentUser.name}`);
+                        Text.fontSize(16);
+                        Text.fontWeight(FontWeight.Bold);
+                        Text.fontColor(AppColors.textPrimary);
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        If.create();
+                        if (this.currentUser.unit) {
+                            this.ifElseBranchUpdateFunction(0, () => {
+                                this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                    Text.create(`æ‰€å±ï¼š${this.currentUser.unit}`);
+                                    Text.fontSize(12);
+                                    Text.fontColor(AppColors.textTertiary);
+                                }, Text);
+                                Text.pop();
+                            });
+                        }
+                        else {
+                            this.ifElseBranchUpdateFunction(1, () => {
+                            });
+                        }
+                    }, If);
+                    If.pop();
+                    Column.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Blank.create();
+                    }, Blank);
+                    Blank.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('ğŸ‘¤ ä¸ªäººä¸­å¿ƒ');
+                        Button.fontSize(13);
+                        Button.height(32);
+                        Button.fontColor(Color.White);
+                        Button.backgroundColor(AppColors.primary);
+                        Button.borderRadius(16);
+                        Button.margin({ right: 8 });
+                        Button.onClick(() => this.goToProfile());
+                    }, Button);
+                    Button.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('é€€å‡ºç™»å½•');
+                        Button.fontSize(13);
+                        Button.height(32);
+                        Button.fontColor(Color.White);
+                        Button.backgroundColor(AppColors.danger);
+                        Button.borderRadius(16);
+                        Button.onClick(() => this.logout());
+                    }, Button);
+                    Button.pop();
+                    // ç”¨æˆ·ä¿¡æ¯æ 
+                    Row.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        // åˆ†éš”æç¤º
+                        Text.create('è¯·é€‰æ‹©æ‚¨çš„èº«ä»½');
+                        // åˆ†éš”æç¤º
+                        Text.fontSize(14);
+                        // åˆ†éš”æç¤º
+                        Text.fontColor(AppColors.textSecondary);
+                        // åˆ†éš”æç¤º
+                        Text.width('85%');
+                        // åˆ†éš”æç¤º
+                        Text.margin({ top: 8, bottom: 4 });
+                    }, Text);
+                    // åˆ†éš”æç¤º
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        // è§’è‰²å¡ç‰‡ - æŒ‰ displayRoles é¡ºåºæ˜¾ç¤º
+                        ForEach.create();
+                        const forEachItemGenFunction = _item => {
+                            const role = _item;
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Column.create({ space: 4 });
+                                Column.width('80%');
+                                Column.padding(16);
+                                Column.backgroundColor(getRoleBgColor(role));
+                                Column.borderRadius(16);
+                                Column.onClick(() => this.selectRole(role));
+                            }, Column);
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Text.create(getRoleEmoji(role));
+                                Text.fontSize(40);
+                            }, Text);
+                            Text.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Text.create(getRoleLabel(role));
+                                Text.fontSize(18);
+                                Text.fontWeight(FontWeight.Bold);
+                                Text.fontColor(AppColors.textPrimary);
+                            }, Text);
+                            Text.pop();
+                            this.observeComponentCreation2((elmtId, isInitialRender) => {
+                                Text.create(getRoleSubtitle(role));
+                                Text.fontSize(11);
+                                Text.fontColor(AppColors.textTertiary);
+                            }, Text);
+                            Text.pop();
+                            Column.pop();
+                        };
+                        this.forEachUpdateFunction(elmtId, this.displayRoles, forEachItemGenFunction, (role) => role.toString(), false, false);
+                    }, ForEach);
+                    // è§’è‰²å¡ç‰‡ - æŒ‰ displayRoles é¡ºåºæ˜¾ç¤º
+                    ForEach.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Blank.create();
+                        Blank.height(8);
+                    }, Blank);
+                    Blank.pop();
+                    // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+                    Column.pop();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.create({ space: 16 });
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.width('100%');
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.height('100%');
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.backgroundColor(AppColors.bg);
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.justifyContent(FlexAlign.Center);
+                        // ===== æœªç™»å½•çŠ¶æ€ =====
+                        Column.alignItems(HorizontalAlign.Center);
+                    }, Column);
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('ğŸŒŠ');
+                        Text.fontSize(56);
+                        Text.margin({ top: 16 });
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('æ™ºæ…§é˜²æ±›åº”æ€¥æ•‘æ´ç³»ç»Ÿ');
+                        Text.fontSize(24);
+                        Text.fontWeight(FontWeight.Bold);
+                        Text.fontColor(AppColors.primary);
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('â€”â€” æ±›å®‰ â€”â€”');
+                        Text.fontSize(16);
+                        Text.fontColor(AppColors.textSecondary);
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create('è¯·ç™»å½•ä»¥ç»§ç»­');
+                        Text.fontSize(14);
+                        Text.fontColor(AppColors.textSecondary);
+                        Text.margin({ top: 8, bottom: 4 });
+                    }, Text);
+                    Text.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('ç™»å½•');
+                        Button.width('80%');
+                        Button.height(48);
+                        Button.fontSize(16);
+                        Button.fontWeight(FontWeight.Medium);
+                        Button.fontColor(Color.White);
+                        Button.backgroundColor(AppColors.primary);
+                        Button.borderRadius(24);
+                        Button.onClick(() => this.goToLogin());
+                    }, Button);
+                    Button.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Button.createWithLabel('å¿«é€Ÿæ±‚æ•‘');
+                        Button.width('80%');
+                        Button.height(48);
+                        Button.fontSize(16);
+                        Button.fontWeight(FontWeight.Medium);
+                        Button.fontColor(Color.White);
+                        Button.backgroundColor(AppColors.danger);
+                        Button.borderRadius(24);
+                        Button.onClick(() => this.goToQuickSOS());
+                    }, Button);
+                    Button.pop();
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Blank.create();
+                        Blank.height(8);
+                    }, Blank);
+                    Blank.pop();
+                    // ===== æœªç™»å½•çŠ¶æ€ =====
+                    Column.pop();
+                });
+            }
+        }, If);
+        If.pop();
+    }
+    rerender() {
+        this.updateDirtyElements();
+    }
+    static getEntryName() {
+        return "Index";
+    }
+}
+registerNamedRoute(() => new Index(undefined, {}), "", { bundleName: "com.xunan.floodrescue", moduleName: "entry", pagePath: "pages/Index", pageFullPath: "entry/src/main/ets/pages/Index", integratedHsp: "false", moduleType: "followWithHap" });
+//# sourceMappingURL=Index.js.mapÂ•ÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsÙQC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\Role.etsÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsÙRC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\pages\Index.etsÔrBšªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo°belongModulePath¬shouldEmitJs¥entryÃÂÙ5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÙ/C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn¥entry¥1.0.0Ô  Ù5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÃÃÚ¸import { router, promptAction } from '@kit.ArkUI';
+import { Role } from '../model/Role';
+import { User } from '../model/User';
+import { getLoggedInPhone, getUserByPhone, clearLoggedIn, setCurrentRole } from '../utils/ApiService';
+import { AppColors, getRoleLabel, getRoleEmoji, getRoleBgColor, getRolePage } from '../common/Theme';
+
+function getRoleSubtitle(role: Role): string {
+  if (role === Role.CITIZEN) {
+    return 'å‘å¸ƒæ±‚æ•‘ä¿¡æ¯';
+  } else if (role === Role.RESCUER) {
+    return 'æ¥æ”¶ä»»åŠ¡å¹¶å‰å¾€æ•‘æ´';
+  }
+  return 'è°ƒåº¦æŒ‡æŒ¥ä¸ç›‘æ§';
+}
+
+function getDefaultRole(roles: Role[]): Role {
+  if (roles.includes(Role.CITIZEN)) {
+    return Role.CITIZEN;
+  } else if (roles.includes(Role.RESCUER)) {
+    return Role.RESCUER;
+  } else if (roles.includes(Role.COMMAND)) {
+    return Role.COMMAND;
+  }
+  return Role.CITIZEN;
+}
+
+@Entry
+@Component
+struct Index {
+  @State currentUser: User | null = null;
+  @State displayRoles: Role[] = [];
+  @State isAutoNavigated: boolean = false;
+
+  aboutToAppear(): void {
+    this.loadUser();
+  }
+
+  async loadUser(): Promise<void> {
+    try {
+      const phone = getLoggedInPhone();
+      if (!phone) {
+        return;
+      }
+      const user = await getUserByPhone(phone);
+      if (user) {
+        this.currentUser = user;
+        // å¼ºåˆ¶æŒ‰æ­£ç¡®é¡ºåºæ˜¾ç¤ºï¼šç¾¤ä¼— â†’ æ•‘æ´äººå‘˜ â†’ æŒ‡æŒ¥éƒ¨
+        const roleOrder: Role[] = [Role.CITIZEN, Role.RESCUER, Role.COMMAND];
+        this.displayRoles = roleOrder.filter((role: Role) => user.roles.includes(role));
+
+        // å·²ç™»å½•ç”¨æˆ·è‡ªåŠ¨è·³è½¬åˆ°é»˜è®¤èº«ä»½é¡µé¢ï¼ˆåªæ‰§è¡Œä¸€æ¬¡ï¼‰
+        if (!this.isAutoNavigated && this.displayRoles.length > 0) {
+          this.isAutoNavigated = true;
+          let defaultRole = getDefaultRole(this.displayRoles);
+          setCurrentRole(defaultRole);
+          router.replaceUrl({ url: getRolePage(defaultRole) });
+        }
+      }
+    } catch (err) {
+      console.error('åŠ è½½ç”¨æˆ·ä¿¡æ¯å¤±è´¥', JSON.stringify(err));
+      promptAction.showToast({ message: 'åŠ è½½ç”¨æˆ·ä¿¡æ¯å¤±è´¥ï¼Œè¯·é‡æ–°ç™»å½•' });
+    }
+  }
+
+  logout(): void {
+    clearLoggedIn();
+    this.currentUser = null;
+    this.displayRoles = [];
+    router.replaceUrl({ url: 'pages/LoginPage' });
+  }
+
+  selectRole(role: Role): void {
+    try {
+      setCurrentRole(role);
+      router.pushUrl({ url: getRolePage(role) });
+    } catch (err) {
+      console.error('è·³è½¬å¤±è´¥', JSON.stringify(err));
+      promptAction.showToast({ message: 'é¡µé¢è·³è½¬å¤±è´¥ï¼Œè¯·é‡è¯•' });
+    }
+  }
+
+  goToProfile(): void {
+    try {
+      router.pushUrl({ url: 'pages/ProfilePage' });
+    } catch (err) {
+      console.error('è·³è½¬ä¸ªäººä¸­å¿ƒå¤±è´¥', JSON.stringify(err));
+      promptAction.showToast({ message: 'é¡µé¢è·³è½¬å¤±è´¥' });
+    }
+  }
+
+  goToLogin(): void {
+    try {
+      router.pushUrl({ url: 'pages/LoginPage' });
+    } catch (err) {
+      console.error('è·³è½¬ç™»å½•é¡µå¤±è´¥', JSON.stringify(err));
+    }
+  }
+
+  goToQuickSOS(): void {
+    try {
+      setCurrentRole(Role.CITIZEN);
+      router.pushUrl({ url: 'pages/CitizenPage' });
+    } catch (err) {
+      console.error('å¿«é€Ÿæ±‚æ•‘è·³è½¬å¤±è´¥', JSON.stringify(err));
+      promptAction.showToast({ message: 'è·³è½¬å¤±è´¥ï¼Œè¯·é‡è¯•' });
+    }
+  }
+
+  // é¸¿è’™åŸç”Ÿå¼é¡µé¢è½¬åœºï¼špush ä»å³æ»‘å…¥ã€pop ä»å·¦è¿”å›ï¼Œæ—§é¡µé¢æ·¡å‡ºå½¢æˆè§†å·®
+  pageTransition() {
+    PageTransitionEnter({ duration: 400, curve: Curve.Friction, type: RouteType.Push })
+      .slide(SlideEffect.Right)
+    PageTransitionExit({ duration: 400, curve: Curve.Friction, type: RouteType.Push })
+      .slide(SlideEffect.Left)
+      .opacity(0.6)
+    PageTransitionEnter({ duration: 400, curve: Curve.Friction, type: RouteType.Pop })
+      .slide(SlideEffect.Left)
+    PageTransitionExit({ duration: 400, curve: Curve.Friction, type: RouteType.Pop })
+      .slide(SlideEffect.Right)
+      .opacity(0.6)
+  }
+
+  build() {
+    if (this.currentUser) {
+      // ===== å·²ç™»å½•çŠ¶æ€ï¼ˆè‡ªåŠ¨è·³è½¬åé€šå¸¸ä¸ä¼šåœç•™åœ¨æ­¤ï¼‰=====
+      Column({ space: 8 }) {
+        // ç”¨æˆ·ä¿¡æ¯æ 
+        Row() {
+          Column({ space: 2 }) {
+            Text(`æ¬¢è¿ï¼Œ${this.currentUser!.name}`)
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.textPrimary)
+            if (this.currentUser!.unit) {
+              Text(`æ‰€å±ï¼š${this.currentUser!.unit}`)
+                .fontSize(12)
+                .fontColor(AppColors.textTertiary)
+            }
+          }
+          .alignItems(HorizontalAlign.Start)
+
+          Blank()
+
+          Button('ğŸ‘¤ ä¸ªäººä¸­å¿ƒ')
+            .fontSize(13)
+            .height(32)
+            .fontColor(Color.White)
+            .backgroundColor(AppColors.primary)
+            .borderRadius(16)
+            .margin({ right: 8 })
+            .onClick(() => this.goToProfile())
+
+          Button('é€€å‡ºç™»å½•')
+            .fontSize(13)
+            .height(32)
+            .fontColor(Color.White)
+            .backgroundColor(AppColors.danger)
+            .borderRadius(16)
+            .onClick(() => this.logout())
+        }
+        .width('85%')
+        .padding({ top: 16, bottom: 4 })
+
+        // åˆ†éš”æç¤º
+        Text('è¯·é€‰æ‹©æ‚¨çš„èº«ä»½')
+          .fontSize(14)
+          .fontColor(AppColors.textSecondary)
+          .width('85%')
+          .margin({ top: 8, bottom: 4 })
+
+        // è§’è‰²å¡ç‰‡ - æŒ‰ displayRoles é¡ºåºæ˜¾ç¤º
+        ForEach(this.displayRoles, (role: Role) => {
+          Column({ space: 4 }) {
+            Text(getRoleEmoji(role))
+              .fontSize(40)
+            Text(getRoleLabel(role))
+              .fontSize(18)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(AppColors.textPrimary)
+            Text(getRoleSubtitle(role))
+              .fontSize(11)
+              .fontColor(AppColors.textTertiary)
+          }
+          .width('80%')
+          .padding(16)
+          .backgroundColor(getRoleBgColor(role))
+          .borderRadius(16)
+          .onClick(() => this.selectRole(role))
+        }, (role: Role) => role.toString())
+
+        Blank()
+          .height(8)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(AppColors.bg)
+      .alignItems(HorizontalAlign.Center)
+
+    } else {
+      // ===== æœªç™»å½•çŠ¶æ€ =====
+      Column({ space: 16 }) {
+        Text('ğŸŒŠ')
+          .fontSize(56)
+          .margin({ top: 16 })
+
+        Text('æ™ºæ…§é˜²æ±›åº”æ€¥æ•‘æ´ç³»ç»Ÿ')
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(AppColors.primary)
+
+        Text('â€”â€” æ±›å®‰ â€”â€”')
+          .fontSize(16)
+          .fontColor(AppColors.textSecondary)
+
+        Text('è¯·ç™»å½•ä»¥ç»§ç»­')
+          .fontSize(14)
+          .fontColor(AppColors.textSecondary)
+          .margin({ top: 8, bottom: 4 })
+
+        Button('ç™»å½•')
+          .width('80%')
+          .height(48)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.primary)
+          .borderRadius(24)
+          .onClick(() => this.goToLogin())
+
+        Button('å¿«é€Ÿæ±‚æ•‘')
+          .width('80%')
+          .height(48)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.danger)
+          .borderRadius(24)
+          .onClick(() => this.goToQuickSOS())
+
+        Blank()
+          .height(8)
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(AppColors.bg)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+    }
+  }
+}
+ÀÔrC•¬@ohos.router²@ohos.promptAction­../model/Role³../utils/ApiService¯../common/ThemeÔrD—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙQ hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.router.d.tsAÃªoh-resolveÂDAÃÙW hvigor_ignore_D:_DevEco Studio_sdk_default_openharmony_ets_api_@ohos.promptAction.d.tsAÃªoh-resolveÂDAÂÙQC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\model\Role.etsAÃªoh-resolveÂDAÂÙWC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\utils\ApiService.etsAÃªoh-resolveÂDAÂÙSC:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\common\Theme.etsAÃªoh-resolveÂ“ÔrE–§version¤fileªsourceRoot§sources¥names¨mappings¨Index.js ‘©Index.etsÜ‘–”    ”  	”  ”  %”!  1”"  2–”    ”  ”  ”  %”-  1”.  2˜”   ” ”	 	” ” ” ”$ $”% %”   ” ”	 	” ” ”) )”+ +”8 8”: :”ÌH ÌH”ÌJ ÌJ”ÌP ÌP”Ìe Ìe”Ìf ÌfÜ ”   ” ”	 	” ” ”   ”" "”. .”0 0”> >”Ì@ Ì@”ÌK ÌK”ÌM ÌM”ÌS ÌS”Ìd Ìd”Ìe Ìe•”   ”	 	” ” ” #˜” ” ” 
+” ” ” ” ” ”” ” ” ” ‘” 	˜”	 		” 	” 	” 	” 	” 	”" 	"”$ 	$”” 
+” 
+” 
+” 
+‘” ”” ” 	” ” ’”   ” •”   ”	 	” ” ” %›” ” ” ” ” ” ” ” ”# !”$ "”& $–” ” ” ” ” ” ‘” ›”	 	” ” ” ” ” ”   ”! !”( (”) )”+ +–” ” ” ” ” ” ‘” ›”	 	” ” ” ” ” ”   ”! !”( (”) )”+ +–” ” ” ” ” ” ‘” –” ” 	” ” ” ” ’”   ” ’” ” ‘”  ’”: $”> (’”;  ”= "’”> $”ÌC )‘” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” 	” ’” !” !–” "” "” "	” "” "” "’” #” #”” %”	 %”
+ %” %’” &” &—” '” '” '” '”* '$”, '&”- ''•” (” (
+” (” (” (’” )” )‘” *š” +” +” +” +” +”- +'”. +(”3 +-”4 +.”5 +/”” ,” ,
+” ,” ,—” -” -” -”  -”# -”' -”( - ’” .”, .$Ü ” /” /” /”" /"”# /#”' /'”( /(”/ //”1 /1”5 /5”6 /6”= /=”? /?”ÌC /ÌC”ÌD /ÌD”ÌK /ÌK”ÌL /ÌL”ÌM /ÌMÜ ” 0” 0” 0”! 0”$ 0”- 0%”. 0&”4 0,”5 0-”6 0.”: 08”< 0:”> 0<”? 0=”ÌC 0ÌA”ÌD 0ÌB”ÌI 0ÌG”ÌJ 0ÌH”ÌR 0ÌP”ÌS 0ÌQ”ÌW 0ÌU”ÌX 0ÌV”ÌY 0ÌW”ÌZ 0ÌX’” 2”* 2"Ÿ” 3” 3” 3” 3” 3”) 3!”- 3%”1 3)”2 3*”> 36”? 37”ÌE 3=”ÌH 3Ì@”ÌI 3ÌA”ÌK 3ÌC—” 4
+” 4” 4”( 4”+ 4!”/ 4%”0 4&›” 5
+” 5”# 5”& 5”4 5*”5 5+”9 5/”: 50”ÌF 5<”ÌG 5=”ÌH 5>–” 6
+”" 6”# 6”. 6$”/ 6%”0 6&Ÿ” 7
+” 7” 7”% 7”& 7”( 7”+ 7!”- 7#”8 7.”9 7/”ÌD 7:”ÌE 7;”ÌG 7=”ÌH 7>”ÌI 7?‘” 8	‘” 9‘”	 :”” :” :” :” :Ÿ” ;” ;” ;” ;” ;”$ ;”& ; ”* ;$”+ ;%”4 ;.”5 ;/”8 ;2”9 ;3”: ;4”; ;5œ” <” <” <”" <”# <”% <”, <&”. <(”> <8”Ì@ <:”ÌA <;”ÌB <<‘”	 =’” >” >’” Ì@”
+ Ì@”” ÌA” ÌA” ÌA” ÌA—” ÌB” ÌB” ÌB	” ÌB” ÌB” ÌB”  ÌB—” ÌC” ÌC” ÌC	” ÌC” ÌC” ÌC” ÌCœ” ÌD” ÌD
+” ÌD” ÌD” ÌD” ÌD” ÌD”! ÌD”2 ÌD.”4 ÌD0”5 ÌD1”6 ÌD2’” ÌE” ÌE”” ÌG” ÌG” ÌG” ÌG’” ÌH” ÌH–” ÌI” ÌI” ÌI” ÌI”  ÌI”! ÌIŸ” ÌJ” ÌJ” ÌJ” ÌJ” ÌJ” ÌJ”  ÌJ”" ÌJ”- ÌJ'”. ÌJ(”2 ÌJ,”3 ÌJ-”5 ÌJ/”6 ÌJ0”7 ÌJ1‘”	 ÌK”” ÌK” ÌK” ÌK” ÌKŸ” ÌL” ÌL” ÌL” ÌL” ÌL”  ÌL”" ÌL”& ÌL ”' ÌL!”0 ÌL*”1 ÌL+”4 ÌL.”5 ÌL/”6 ÌL0”7 ÌL1œ” ÌM” ÌM” ÌM”" ÌM”# ÌM”% ÌM”, ÌM&”. ÌM(”: ÌM4”< ÌM6”= ÌM7”> ÌM8‘”	 ÌN’” ÌO” ÌO’” ÌQ” ÌQ’” ÌR” ÌRœ” ÌS” ÌS” ÌS” ÌS” ÌS” ÌS”  ÌS”" ÌS”5 ÌS/”7 ÌS1”8 ÌS2”9 ÌS3‘”	 ÌT”” ÌT” ÌT” ÌT” ÌTŸ” ÌU” ÌU” ÌU” ÌU” ÌU”$ ÌU”& ÌU ”* ÌU$”+ ÌU%”4 ÌU.”5 ÌU/”8 ÌU2”9 ÌU3”: ÌU4”; ÌU5œ” ÌV” ÌV” ÌV”" ÌV”# ÌV”% ÌV”, ÌV&”. ÌV(”6 ÌV0”8 ÌV2”9 ÌV3”: ÌV4‘”	 ÌW’” ÌX” ÌX’” ÌZ” ÌZ’” Ì[” Ì[œ” Ì\” Ì\” Ì\” Ì\” Ì\” Ì\”  Ì\”" Ì\”3 Ì\-”5 Ì\/”6 Ì\0”7 Ì\1‘”	 Ì]”” Ì]” Ì]” Ì]” Ì]Ÿ” Ì^” Ì^” Ì^” Ì^” Ì^”# Ì^”% Ì^”) Ì^#”* Ì^$”3 Ì^-”4 Ì^.”7 Ì^1”8 Ì^2”9 Ì^3”: Ì^4‘”	 Ì_’” Ì`” Ì`’” Ìb” Ìb’” Ìc” Ìc˜” Ìd” Ìd” Ìd” Ìd”  Ìd”' Ìd!”( Ìd"”) Ìd#œ” Ìe” Ìe” Ìe” Ìe” Ìe” Ìe”  Ìe”" Ìe”5 Ìe/”7 Ìe1”8 Ìe2”9 Ìe3‘”	 Ìf”” Ìf” Ìf” Ìf” ÌfŸ” Ìg” Ìg” Ìg” Ìg” Ìg”$ Ìg”& Ìg ”* Ìg$”+ Ìg%”4 Ìg.”5 Ìg/”8 Ìg2”9 Ìg3”: Ìg4”; Ìg5œ” Ìh” Ìh” Ìh”" Ìh”# Ìh”% Ìh”, Ìh&”. Ìh(”8 Ìh2”: Ìh4”; Ìh5”< Ìh6‘”	 Ìi’” Ìj” Ìj’” Ìl”- Ìl+’” Ìm” ÌmÜ ” Ìn” Ìn”' Ìn”) Ìn”1 Ìn"”3 Ìn$”6 Ìn'”8 Ìn)”= Ìn.”? Ìn0”ÌD Ìn5”ÌE Ìn6”ÌM Ìn>”ÌO ÌnÌ@”ÌS ÌnÌD”ÌU ÌnÌF”Ì^ ÌnÌO”Ì_ ÌnÌP”Ìc ÌnÌT”Ìe ÌnÌV˜” Ìn” Ìn”  Ìo”% Ìo”& Ìo”1 Ìo”2 Ìo”7 ÌoÜ ” Ìp” Ìp”& Ìp”( Ìp”0 Ìp!”2 Ìp#”5 Ìp&”7 Ìp(”< Ìp-”> Ìp/”ÌC Ìp4”ÌD Ìp5”ÌL Ìp=”ÌN Ìp?”ÌR ÌpÌC”ÌT ÌpÌE”Ì] ÌpÌN”Ì^ ÌpÌO”Ìb ÌpÌS”Ìd ÌpÌU˜” Ìp” Ìp” Ìq”$ Ìq”% Ìq”0 Ìq”1 Ìq”5 Ìq–” Ìp” Ìp” Ìr”& Ìr”' Ìr”* ÌrÜ ” Ìs” Ìs”' Ìs”) Ìs”1 Ìs"”3 Ìs$”6 Ìs'”8 Ìs)”= Ìs.”? Ìs0”ÌD Ìs5”ÌE Ìs6”ÌM Ìs>”ÌO ÌsÌ@”ÌS ÌsÌD”ÌU ÌsÌF”Ì^ ÌsÌO”Ì_ ÌsÌP”Ìb ÌsÌS”Ìd ÌsÌU˜” Ìs” Ìs”  Ìt”% Ìt”& Ìt”1 Ìt”2 Ìt”6 ÌtÜ ” Ìu” Ìu”& Ìu”( Ìu”0 Ìu!”2 Ìu#”5 Ìu&”7 Ìu(”< Ìu-”> Ìu/”ÌC Ìu4”ÌD Ìu5”ÌL Ìu=”ÌN Ìu?”ÌR ÌuÌC”ÌT ÌuÌE”Ì] ÌuÌN”Ì^ ÌuÌO”Ìa ÌuÌR”Ìc ÌuÌT˜” Ìu” Ìu” Ìv”$ Ìv”% Ìv”0 Ìv”1 Ìv”6 Ìv–” Ìu” Ìu” Ìw”& Ìw”' Ìw”* Ìw‘” Ìx‘” Ìz–” Ì{” Ì{” Ì{” Ì{”  Ì{”" Ì{’” Ì|”: Ì|(˜” Ì}” Ì}”& Ì}”( Ì}”- Ì}”/ Ì}”0 Ì}”2 Ì}’” Ì|”: Ì|(–” Ì}” Ì}” ÌÁ”$ ÌÁ”% ÌÁ”+ ÌÁ’” Ì|”: Ì|(–” Ì}” Ì}” ÌÂ”% ÌÂ”& ÌÂ”, ÌÂ’” Ì|”: Ì|(˜” Ì}” Ì}” ÌÃ”. ÌÃ”/ ÌÃ”8 ÌÃ ”9 ÌÃ!”; ÌÃ#’” Ì|”: Ì|(˜” Ì}” Ì}” ÌÄ”) ÌÄ”* ÌÄ”9 ÌÄ!”: ÌÄ"”Ì@ ÌÄ(’” Ì~”  Ì~’” Ì” Ì’” Ì~”  Ì~–” Ì” Ì” Ì 	”! Ì ”" Ì ”' Ì ’” Ì~”  Ì~” Ì” Ì” Ì¡	”# Ì¡”$ Ì¡”& Ì¡”) Ì¡”+ Ì¡”- Ì¡”/ Ì¡”5 Ì¡"”7 Ì¡$”8 Ì¡%”: Ì¡'˜” Ì€
+” Ì€”& Ì€”( Ì€”- Ì€”/ Ì€”0 Ì€”2 Ì€˜” Ì€
+” Ì€” Ì‹”) Ì‹”* Ì‹”9 Ì‹%”: Ì‹&”? Ì‹+š” Ì” Ì”$ Ì”* Ì”. Ì”/ Ì”: Ì(”; Ì)”? Ì-”ÌA Ì/–” Ì” Ì” Ì‚”% Ì‚”& Ì‚”( Ì‚˜” Ì” Ì” Ìƒ”' Ìƒ”( Ìƒ”2 Ìƒ$”3 Ìƒ%”7 Ìƒ)˜” Ì” Ì” Ì„”& Ì„”' Ì„”0 Ì„"”1 Ì„#”< Ì„.’” Ì” Ì˜” Ì…” Ì…”  Ì…”! Ì…”, Ì…!”- Ì…"”1 Ì…&”3 Ì…(š”$ Ì†”( Ì†”0 Ì†”6 Ì†”: Ì†”; Ì†”ÌF Ì†*”ÌG Ì†+”ÌK Ì†/”ÌM Ì†1–”$ Ì†”( Ì†”) Ì‡”1 Ì‡”2 Ì‡”4 Ì‡˜”$ Ì†”( Ì†”) Ìˆ”2 Ìˆ”3 Ìˆ”< Ìˆ$”= Ìˆ%”ÌI Ìˆ1’”  Ì†”$ Ì†‘” Ì‰‘” Ì‰’” Ì€
+” Ì€’” Ì
+” Ì’” Ì
+” Ì”” Ì
+” Ì”/ Ì”8 Ì–” Ì
+” Ì” Ì”' Ì”( Ì”* Ì–” Ì
+” Ì” Ì‘”% Ì‘”& Ì‘”( Ì‘˜” Ì
+” Ì” Ì’”( Ì’”) Ì’”. Ì’”/ Ì’”4 Ì’"˜” Ì
+” Ì” Ì“”. Ì“”/ Ì“”8 Ì“&”9 Ì“'”Ì@ Ì“.–” Ì
+” Ì” Ì””+ Ì””, Ì””. Ì”š” Ì
+” Ì” Ì•”% Ì•”& Ì•”( Ì•”- Ì•”/ Ì•”0 Ì•”2 Ì• œ” Ì
+” Ì” Ì–”& Ì–”' Ì–”* Ì–”, Ì–”- Ì–”1 Ì–”2 Ì– ”= Ì–+”? Ì–-’” Ì
+” Ì”” Ì˜
+” Ì˜”/ Ì˜”5 Ì˜–” Ì˜
+” Ì˜” Ì™”' Ì™”( Ì™”* Ì™–” Ì˜
+” Ì˜” Ìš”% Ìš”& Ìš”( Ìš˜” Ì˜
+” Ì˜” Ì›”( Ì›”) Ì›”. Ì›”/ Ì›”4 Ì›"˜” Ì˜
+” Ì˜” Ìœ”. Ìœ”/ Ìœ”8 Ìœ&”9 Ìœ'”? Ìœ-–” Ì˜
+” Ì˜” Ì”+ Ì”, Ì”. Ìœ” Ì˜
+” Ì˜” Ì”& Ì”' Ì”* Ì”, Ì”- Ì”1 Ì”2 Ì ”8 Ì&”: Ì(’” Ì˜
+” Ì˜’” Ì~” Ì~’” Ì” Ì’” Ì£” Ì£”” Ì¤” Ì¤”$ Ì¤”- Ì¤’” Ì£” Ì£–” Ì¤” Ì¤” Ì¥”% Ì¥”& Ì¥”( Ì¥’” Ì£” Ì£˜” Ì¤” Ì¤” Ì¦”& Ì¦”' Ì¦”0 Ì¦”1 Ì¦”> Ì¦,’” Ì£” Ì£–” Ì¤” Ì¤” Ì§”" Ì§”# Ì§”( Ì§’” Ì£” Ì£” Ì¤” Ì¤” Ì¨”# Ì¨”$ Ì¨”& Ì¨”) Ì¨”+ Ì¨”, Ì¨”. Ì¨”4 Ì¨"”6 Ì¨$”7 Ì¨%”9 Ì¨'’” Ì£” Ì£’” Ì¤” Ì¤’” Ìª”5 Ìª%’” Ì«” Ì«˜”  Ì¬
+”& Ì¬”. Ì¬”0 Ì¬”5 Ì¬”7 Ì¬”8 Ì¬”: Ì¬–”  Ì¬
+”& Ì¬”' Ì·”, Ì·”- Ì·”2 Ì·–”  Ì¬
+”& Ì¬”' Ì¸”. Ì¸”/ Ì¸”1 Ì¸™”  Ì¬
+”& Ì¬”' Ì¹”6 Ì¹”7 Ì¹”ÌE Ì¹)”ÌF Ì¹*”ÌJ Ì¹.”ÌK Ì¹/–”  Ì¬
+”& Ì¬”' Ìº”3 Ìº”4 Ìº”6 Ìº”  Ì¬
+”& Ì¬”' Ì»”. Ì»”/ Ì»”2 Ì»”4 Ì»”5 Ì»”9 Ì»”: Ì»”ÌD Ì»(”ÌE Ì»)”ÌI Ì»-”ÌJ Ì».—”  Ì­”$ Ì­”, Ì­”8 Ì­”9 Ì­”= Ì­"”> Ì­#–”  Ì­”$ Ì­”% Ì®”- Ì®”. Ì®”0 Ì®’” Ì­”  Ì­—”  Ì¯”$ Ì¯”, Ì¯”8 Ì¯”9 Ì¯”= Ì¯"”> Ì¯#–”  Ì¯”$ Ì¯”% Ì°”- Ì°”. Ì°”0 Ì°˜”  Ì¯”$ Ì¯”% Ì±”/ Ì±”0 Ì±”: Ì±$”; Ì±%”? Ì±)˜”  Ì¯”$ Ì¯”% Ì²”. Ì²”/ Ì²”8 Ì²"”9 Ì²#”ÌD Ì².’” Ì¯”  Ì¯—”  Ì³”$ Ì³”, Ì³”; Ì³ ”< Ì³!”Ì@ Ì³%”ÌA Ì³&–”  Ì³”$ Ì³”% Ì´”- Ì´”. Ì´”0 Ì´˜”  Ì³”$ Ì³”% Ìµ”. Ìµ”/ Ìµ”8 Ìµ"”9 Ìµ#”ÌE Ìµ/’” Ì³”  Ì³’” Ì¬
+”" Ì¬”; Ì«”? Ì«”Ì@ Ì«”ÌL Ì«!”Ìf Ì¼”Ìg Ì¼”Ìk Ì¼”Ìm Ì¼”Ìo Ì¼”Ìp Ì¼”Ìt Ì¼”Ìu Ì¼ ”Ì} Ì¼(”Ì Ì¼*’” Ìª”1 Ìª%’” Ì«” Ì«’” Ì¾” Ì¾–” Ì¾” Ì¾” Ì¿”$ Ì¿”% Ì¿”& Ì¿’” Ì¾” Ì¾’” Ì|”6 Ì|(’” Ì}” Ì}‘” ÌÆ‘” ÌÆ’” ÌÇ”, ÌÇ˜” ÌÈ” ÌÈ”& ÌÈ”( ÌÈ”- ÌÈ”/ ÌÈ”1 ÌÈ”3 ÌÈ’” ÌÇ”, ÌÇ–” ÌÈ” ÌÈ” Ìò”$ Ìò”% Ìò”+ Ìò’” ÌÇ”, ÌÇ–” ÌÈ” ÌÈ” Ìó”% Ìó”& Ìó”, Ìó’” ÌÇ”, ÌÇ˜” ÌÈ” ÌÈ” Ìô”. Ìô”/ Ìô”8 Ìô ”9 Ìô!”; Ìô#’” ÌÇ”, ÌÇ˜” ÌÈ” ÌÈ” Ìõ”- Ìõ”. Ìõ”7 Ìõ”8 Ìõ ”> Ìõ&’” ÌÇ”, ÌÇ˜” ÌÈ” ÌÈ” Ìö”) Ìö”* Ìö”9 Ìö!”: Ìö"”Ì@ Ìö(”” ÌÉ” ÌÉ”$ ÌÉ”( ÌÉ–” ÌÉ” ÌÉ” ÌÊ”% ÌÊ”& ÌÊ”( ÌÊš” ÌÉ” ÌÉ” ÌË”# ÌË”$ ÌË”& ÌË”) ÌË”+ ÌË”- ÌË”/ ÌË’” ÌÉ” ÌÉ”” ÌÍ” ÌÍ”$ ÌÍ”0 ÌÍ–” ÌÍ” ÌÍ” ÌÎ”% ÌÎ”& ÌÎ”( ÌÎ˜” ÌÍ” ÌÍ” ÌÏ”' ÌÏ”( ÌÏ”2 ÌÏ ”3 ÌÏ!”7 ÌÏ%˜” ÌÍ” ÌÍ” ÌĞ”& ÌĞ”' ÌĞ”0 ÌĞ”1 ÌĞ”8 ÌĞ&’” ÌÍ” ÌÍ”” ÌÒ” ÌÒ”$ ÌÒ”. ÌÒ–” ÌÒ” ÌÒ” ÌÓ”% ÌÓ”& ÌÓ”( ÌÓ˜” ÌÒ” ÌÒ” ÌÔ”& ÌÔ”' ÌÔ”0 ÌÔ”1 ÌÔ”> ÌÔ,’” ÌÒ” ÌÒ”” ÌÖ” ÌÖ”$ ÌÖ”, ÌÖ–” ÌÖ” ÌÖ” Ì×”% Ì×”& Ì×”( Ì×˜” ÌÖ” ÌÖ” ÌØ”& ÌØ”' ÌØ”0 ÌØ”1 ÌØ”> ÌØ,” ÌÖ” ÌÖ” ÌÙ”# ÌÙ”$ ÌÙ”& ÌÙ”) ÌÙ”+ ÌÙ”, ÌÙ”. ÌÙ”4 ÌÙ"”6 ÌÙ$”7 ÌÙ%”9 ÌÙ'’” ÌÖ” ÌÖ”” ÌÛ” ÌÛ”/ ÌÛ”3 ÌÛ–” ÌÛ” ÌÛ” ÌÜ”$ ÌÜ”% ÌÜ”* ÌÜ–” ÌÛ” ÌÛ” Ìİ”% Ìİ”& Ìİ”( Ìİ–” ÌÛ” ÌÛ” ÌŞ”' ÌŞ”( ÌŞ”* ÌŞ˜” ÌÛ” ÌÛ” Ìß”) Ìß”* Ìß”4 Ìß ”5 Ìß!”; Ìß'˜” ÌÛ” ÌÛ” Ìà”( Ìà”) Ìà”. Ìà”/ Ìà”4 Ìà ˜” ÌÛ” ÌÛ” Ìá”. Ìá”/ Ìá”8 Ìá$”9 Ìá%”Ì@ Ìá,–” ÌÛ” ÌÛ” Ìâ”+ Ìâ”, Ìâ”. Ìâœ” ÌÛ” ÌÛ” Ìã”& Ìã”' Ìã”* Ìã”, Ìã”- Ìã”1 Ìã”2 Ìã”; Ìã'”= Ìã)’” ÌÛ” ÌÛ”” Ìå” Ìå”/ Ìå”5 Ìå–” Ìå” Ìå” Ìæ”$ Ìæ”% Ìæ”* Ìæ–” Ìå” Ìå” Ìç”% Ìç”& Ìç”( Ìç–” Ìå” Ìå” Ìè”' Ìè”( Ìè”* Ìè˜” Ìå” Ìå” Ìé”) Ìé”* Ìé”4 Ìé ”5 Ìé!”; Ìé'˜” Ìå” Ìå” Ìê”( Ìê”) Ìê”. Ìê”/ Ìê”4 Ìê ˜” Ìå” Ìå” Ìë”. Ìë”/ Ìë”8 Ìë$”9 Ìë%”? Ìë+–” Ìå” Ìå” Ìì”+ Ìì”, Ìì”. Ììœ” Ìå” Ìå” Ìí”& Ìí”' Ìí”* Ìí”, Ìí”- Ìí”1 Ìí”2 Ìí”> Ìí*”Ì@ Ìí,’” Ìå” Ìå’” Ìï” Ìï–” Ìï” Ìï” Ìğ”$ Ìğ”% Ìğ”& Ìğ’” Ìï” Ìï’” ÌÇ”( ÌÇ’” ÌÈ” ÌÈ‘” Ì÷‘” ÌøÔrF–§version¤file§sources®sourcesContent¥names¨mappingsÀ‘À‘ÀÜš‘”    ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”  	 ‘”  
+ ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”   ‘”    ‘”  ! ‘”  " ‘”  # ‘”  $ ‘”  % ‘”  & ‘”  ' ‘”  ( ‘”  ) ‘”  * ‘”  + ‘”  , ‘”  - ‘”  . ‘”  / ‘”  0 ‘”  1 ‘”  2 ‘”  3 ‘”  4 ‘”  5 ‘”  6 ‘”  7 ‘”  8 ‘”  9 ‘”  : ‘”  ; ‘”  < ‘”  = ‘”  > ‘”  ? ‘”  Ì@ ‘”  ÌA ‘”  ÌB ‘”  ÌC ‘”  ÌD ‘”  ÌE ‘”  ÌF ‘”  ÌG ‘”  ÌH ‘”  ÌI ‘”  ÌJ ‘”  ÌK ‘”  ÌL ‘”  ÌM ‘”  ÌN ‘”  ÌO ‘”  ÌP ‘”  ÌQ ‘”  ÌR ‘”  ÌS ‘”  ÌT ‘”  ÌU ‘”  ÌV ‘”  ÌW ‘”  ÌX ‘”  ÌY ‘”  ÌZ ‘”  Ì[ ‘”  Ì\ ‘”  Ì] ‘”  Ì^ ‘”  Ì_ ‘”  Ì` ‘”  Ìa ‘”  Ìb ‘”  Ìc ‘”  Ìd ‘”  Ìe ‘”  Ìf ‘”  Ìg ‘”  Ìh ‘”  Ìi ‘”  Ìj ‘”  Ìk ‘”  Ìl ‘”  Ìm ‘”  Ìn ‘”  Ìo ‘”  Ìp ‘”  Ìq ‘”  Ìr ‘”  Ìs ‘”  Ìt ‘”  Ìu ‘”  Ìv ‘”  Ìw ‘”  Ìx ‘”  Ìy ‘”  Ìz ‘”  Ì{ ‘”  Ì| ‘”  Ì} ‘”  Ì~ ‘”  Ì ‘”  Ì€ ‘”  Ì ‘”  Ì‚ ‘”  Ìƒ ‘”  Ì„ ‘”  Ì… ‘”  Ì† ‘”  Ì‡ ‘”  Ìˆ ‘”  Ì‰ ‘”  ÌŠ ‘”  Ì‹ ‘”  ÌŒ ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì ‘”  Ì‘ ‘”  Ì’ ‘”  Ì“ ‘”  Ì” ‘”  Ì• ‘”  Ì– ‘”  Ì— ‘”  Ì˜ ‘”  Ì™ ‘”  Ìš ‘”  Ì› ‘”  Ìœ ‘”  Ì ‘”  Ì ‘”  ÌŸ ‘”  Ì  ‘”  Ì¡ ‘”  Ì¢ ‘”  Ì£ ‘”  Ì¤ ‘”  Ì¥ ‘”  Ì¦ ‘”  Ì§ ‘”  Ì¨ ‘”  Ì© ‘”  Ìª ‘”  Ì« ‘”  Ì¬ ‘”  Ì­ ‘”  Ì® ‘”  Ì¯ ‘”  Ì° ‘”  Ì± ‘”  Ì² ‘”  Ì³ ‘”  Ì´ ‘”  Ìµ ‘”  Ì¶ ‘”  Ì· ‘”  Ì¸ ‘”  Ì¹ ‘”  Ìº ‘”  Ì» ‘”  Ì¼ ‘”  Ì½ ‘”  Ì¾ ‘”  Ì¿ ‘”  ÌÀ ‘”  ÌÁ ‘”  ÌÂ ‘”  ÌÃ ‘”  ÌÄ ‘”  ÌÅ ‘”  ÌÆ ‘”  ÌÇ ‘”  ÌÈ ‘”  ÌÉ ‘”  ÌÊ ‘”  ÌË ‘”  ÌÌ ‘”  ÌÍ ‘”  ÌÎ ‘”  ÌÏ ‘”  ÌĞ ‘”  ÌÑ ‘”  ÌÒ ‘”  ÌÓ ‘”  ÌÔ ‘”  ÌÕ ‘”  ÌÖ ‘”  Ì× ‘”  ÌØ ‘”  ÌÙ ‘”  ÌÚ ‘”  ÌÛ ‘”  ÌÜ ‘”  Ìİ ‘”  ÌŞ ‘”  Ìß ‘”  Ìà ‘”  Ìá ‘”  Ìâ ‘”  Ìã ‘”  Ìä ‘”  Ìå ‘”  Ìæ ‘”  Ìç ‘”  Ìè ‘”  Ìé ‘”  Ìê ‘”  Ìë ‘”  Ìì ‘”  Ìí ‘”  Ìî ‘”  Ìï ‘”  Ìğ ‘”  Ìñ ‘”  Ìò ‘”  Ìó ‘”  Ìô ‘”  Ìõ ‘”  Ìö ‘”  Ì÷ ‘”  Ìø ‘”  Ìù ‘”  Ìú ‘”  Ìû ‘”  Ìü ‘”  Ìı ‘”  Ìş ‘”  Ìÿ ‘”  Í  ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í	 ‘”  Í
+ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í  ‘”  Í! ‘”  Í" ‘”  Í# ‘”  Í$ ‘”  Í% ‘”  Í& ‘”  Í' ‘”  Í( ‘”  Í) ‘”  Í* ‘”  Í+ ‘”  Í, ‘”  Í- ‘”  Í. ‘”  Í/ ‘”  Í0 ‘”  Í1 ‘”  Í2 ‘”  Í3 ‘”  Í4 ‘”  Í5 ‘”  Í6 ‘”  Í7 ‘”  Í8 ‘”  Í9 ‘”  Í: ‘”  Í; ‘”  Í< ‘”  Í= ‘”  Í> ‘”  Í? ‘”  Í@ ‘”  ÍA ‘”  ÍB ‘”  ÍC ‘”  ÍD ‘”  ÍE ‘”  ÍF ‘”  ÍG ‘”  ÍH ‘”  ÍI ‘”  ÍJ ‘”  ÍK ‘”  ÍL ‘”  ÍM ‘”  ÍN ‘”  ÍO ‘”  ÍP ‘”  ÍQ ‘”  ÍR ‘”  ÍS ‘”  ÍT ‘”  ÍU ‘”  ÍV ‘”  ÍW ‘”  ÍX ‘”  ÍY ‘”  ÍZ ‘”  Í[ ‘”  Í\ ‘”  Í] ‘”  Í^ ‘”  Í_ ‘”  Í` ‘”  Ía ‘”  Íb ‘”  Íc ‘”  Íd ‘”  Íe ‘”  Íf ‘”  Íg ‘”  Íh ‘”  Íi ‘”  Íj ‘”  Ík ‘”  Íl ‘”  Ím ‘”  Ín ‘”  Ío ‘”  Íp ‘”  Íq ‘”  Ír ‘”  Ís ‘”  Ít ‘”  Íu ‘”  Ív ‘”  Íw ‘”  Íx ‘”  Íy ‘”  Íz ‘”  Í{ ‘”  Í| ‘”  Í} ‘”  Í~ ‘”  Í ‘”  Í€ ‘”  Í ‘”  Í‚ ‘”  Íƒ ‘”  Í„ ‘”  Í… ‘”  Í† ‘”  Í‡ ‘”  Íˆ ‘”  Í‰ ‘”  ÍŠ ‘”  Í‹ ‘”  ÍŒ ‘”  Í ‘”  Í ‘”  Í ‘”  Í ‘”  Í‘ ‘”  Í’ ‘”  Í“ ‘”  Í” ‘”  Í• ‘”  Í– ‘”  Í— ‘”  Í˜ ‘”  Í™ ÔrG’§missing¦pluginÃ¦genAbcÂÔ  ÔrH”²dynamicImportCache¹exportAllDeclarationCache»exportNamedDeclarationCache«importCache•ÔrI•¤type¥start£endªspecifiers¦source±ImportDeclarationÌ€Ì¢‘ÔrJ”¤type¥start£end¥local¶ImportDefaultSpecifierÌ‡ÌÔrK”¤type¥start£end¤nameªIdentifierÌ‡Ì¦routerÔrL•¤type¥start£end¥value£raw§LiteralÌ“Ì¡¬@ohos.router®"@ohos.router"I±ImportDeclarationÌ¤ÌÒ‘J¶ImportDefaultSpecifierÌ«Ì·KªIdentifierÌ«Ì·¬promptActionL§LiteralÌ½ÌÑ²@ohos.promptAction´"@ohos.promptAction"I±ImportDeclarationÌÔÌù‘ÔrM•¤type¥start£end¨imported¥local¯ImportSpecifierÌİÌáKªIdentifierÌİÌá¤RoleKªIdentifierÌİÌá¤RoleL§LiteralÌéÌø­../model/Role¯'../model/Role'I±ImportDeclarationÌûÍa”M¯ImportSpecifierÍÍKªIdentifierÍÍ°getLoggedInPhoneKªIdentifierÍÍ°getLoggedInPhoneM¯ImportSpecifierÍÍ$KªIdentifierÍÍ$®getUserByPhoneKªIdentifierÍÍ$®getUserByPhoneM¯ImportSpecifierÍ&Í3KªIdentifierÍ&Í3­clearLoggedInKªIdentifierÍ&Í3­clearLoggedInM¯ImportSpecifierÍ5ÍCKªIdentifierÍ5ÍC®setCurrentRoleKªIdentifierÍ5ÍC®setCurrentRoleL§LiteralÍKÍ`³../utils/ApiServiceµ'../utils/ApiService'I±ImportDeclarationÍcÍÈ•M¯ImportSpecifierÍlÍuKªIdentifierÍlÍu©AppColorsKªIdentifierÍlÍu©AppColorsM¯ImportSpecifierÍwÍƒKªIdentifierÍwÍƒ¬getRoleLabelKªIdentifierÍwÍƒ¬getRoleLabelM¯ImportSpecifierÍ…Í‘KªIdentifierÍ…Í‘¬getRoleEmojiKªIdentifierÍ…Í‘¬getRoleEmojiM¯ImportSpecifierÍ“Í¡KªIdentifierÍ“Í¡®getRoleBgColorKªIdentifierÍ“Í¡®getRoleBgColorM¯ImportSpecifierÍ£Í®KªIdentifierÍ£Í®«getRolePageKªIdentifierÍ£Í®«getRolePageL§LiteralÍ¶ÍÇ¯../common/Theme±'../common/Theme'
