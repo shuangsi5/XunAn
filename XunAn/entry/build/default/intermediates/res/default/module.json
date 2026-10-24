@@ -28,7 +28,7 @@
 		"type":	"entry",
 		"description":	"$string:module_desc",
 		"mainElement":	"EntryAbility",
-		"deviceTypes":	["phone", "tablet"],
+		"deviceTypes":	["phone", "tablet", "wearable"],
 		"deliveryWithInstall":	true,
 		"installationFree":	false,
 		"pages":	"$profile:main_pages",

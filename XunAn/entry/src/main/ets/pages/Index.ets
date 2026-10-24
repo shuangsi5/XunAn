@@ -3,6 +3,7 @@ import { Role } from '../model/Role';
 import { User } from '../model/User';
 import { getLoggedInPhone, getUserByPhone, clearLoggedIn, setCurrentRole } from '../utils/ApiService';
 import { AppColors, getRoleLabel, getRoleEmoji, getRoleBgColor, getRolePage } from '../common/Theme';
+import { isWearable } from '../common/DeviceAdaptive';
 
 function getRoleSubtitle(role: Role): string {
   if (role === Role.CITIZEN) {
@@ -30,8 +31,10 @@ struct Index {
   @State currentUser: User | null = null;
   @State displayRoles: Role[] = [];
   @State isAutoNavigated: boolean = false;
+  @State isWatch: boolean = false;
 
   aboutToAppear(): void {
+    this.isWatch = isWearable();
     this.loadUser();
   }
 
@@ -122,18 +125,208 @@ struct Index {
 
   build() {
     if (this.currentUser) {
-      // ===== 已登录状态（自动跳转后通常不会停留在此）=====
+      this.buildLoggedIn()
+    } else {
+      this.buildLoggedOut()
+    }
+  }
+
+  // ===== 未登录：手机/平板 =====
+  @Builder
+  buildPhoneLoggedOut() {
+    Column({ space: 16 }) {
+      Text('🌊')
+        .fontSize(56)
+        .margin({ top: 16 })
+
+      Text('智慧防汛应急救援系统')
+        .fontSize(24)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(AppColors.primary)
+
+      Text('—— 汛安 ——')
+        .fontSize(16)
+        .fontColor(AppColors.textSecondary)
+
+      Text('请登录以继续')
+        .fontSize(14)
+        .fontColor(AppColors.textSecondary)
+        .margin({ top: 8, bottom: 4 })
+
+      Button('登录')
+        .width('80%')
+        .height(48)
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(Color.White)
+        .backgroundColor(AppColors.primary)
+        .borderRadius(24)
+        .onClick(() => this.goToLogin())
+
+      Button('快速求救')
+        .width('80%')
+        .height(48)
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(Color.White)
+        .backgroundColor(AppColors.danger)
+        .borderRadius(24)
+        .onClick(() => this.goToQuickSOS())
+
+      Blank()
+        .height(8)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.bg)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  // ===== 未登录：手表（紧凑 + 可滚动，适配圆形小屏）=====
+  @Builder
+  buildWatchLoggedOut() {
+    Scroll() {
+      Column({ space: 10 }) {
+        Text('🌊')
+          .fontSize(30)
+
+        Text('智慧防汛应急救援系统')
+          .fontSize(15)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(AppColors.primary)
+          .textAlign(TextAlign.Center)
+
+        Text('—— 汛安 ——')
+          .fontSize(12)
+          .fontColor(AppColors.textSecondary)
+
+        Text('请登录以继续')
+          .fontSize(12)
+          .fontColor(AppColors.textSecondary)
+          .margin({ top: 2, bottom: 2 })
+
+        Button('登录')
+          .width('74%')
+          .height(40)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.primary)
+          .borderRadius(20)
+          .onClick(() => this.goToLogin())
+
+        Button('快速求救')
+          .width('74%')
+          .height(40)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.danger)
+          .borderRadius(20)
+          .onClick(() => this.goToQuickSOS())
+      }
+      .width('100%')
+      .constraintSize({ minHeight: '100%' })
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 26, right: 26, top: 16, bottom: 16 })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.bg)
+  }
+
+  // ===== 已登录：手机/平板 =====
+  @Builder
+  buildPhoneLoggedIn() {
+    Column({ space: 8 }) {
+      // 用户信息栏
+      Row() {
+        Column({ space: 2 }) {
+          Text(`欢迎，${this.currentUser!.name}`)
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.textPrimary)
+          if (this.currentUser!.unit) {
+            Text(`所属：${this.currentUser!.unit}`)
+              .fontSize(12)
+              .fontColor(AppColors.textTertiary)
+          }
+        }
+        .alignItems(HorizontalAlign.Start)
+
+        Blank()
+
+        Button('👤 个人中心')
+          .fontSize(13)
+          .height(32)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.primary)
+          .borderRadius(16)
+          .margin({ right: 8 })
+          .onClick(() => this.goToProfile())
+
+        Button('退出登录')
+          .fontSize(13)
+          .height(32)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.danger)
+          .borderRadius(16)
+          .onClick(() => this.logout())
+      }
+      .width('85%')
+      .padding({ top: 16, bottom: 4 })
+
+      // 分隔提示
+      Text('请选择您的身份')
+        .fontSize(14)
+        .fontColor(AppColors.textSecondary)
+        .width('85%')
+        .margin({ top: 8, bottom: 4 })
+
+      // 角色卡片 - 按 displayRoles 顺序显示
+      ForEach(this.displayRoles, (role: Role) => {
+        Column({ space: 4 }) {
+          Text(getRoleEmoji(role))
+            .fontSize(40)
+          Text(getRoleLabel(role))
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(AppColors.textPrimary)
+          Text(getRoleSubtitle(role))
+            .fontSize(11)
+            .fontColor(AppColors.textTertiary)
+        }
+        .width('80%')
+        .padding(16)
+        .backgroundColor(getRoleBgColor(role))
+        .borderRadius(16)
+        .onClick(() => this.selectRole(role))
+      }, (role: Role) => role.toString())
+
+      Blank()
+        .height(8)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.bg)
+    .alignItems(HorizontalAlign.Center)
+  }
+
+  // ===== 已登录：手表（紧凑 + 可滚动）=====
+  @Builder
+  buildWatchLoggedIn() {
+    Scroll() {
       Column({ space: 8 }) {
-        // 用户信息栏
         Row() {
           Column({ space: 2 }) {
             Text(`欢迎，${this.currentUser!.name}`)
-              .fontSize(16)
+              .fontSize(13)
               .fontWeight(FontWeight.Bold)
               .fontColor(AppColors.textPrimary)
             if (this.currentUser!.unit) {
               Text(`所属：${this.currentUser!.unit}`)
-                .fontSize(12)
+                .fontSize(10)
                 .fontColor(AppColors.textTertiary)
             }
           }
@@ -141,110 +334,65 @@ struct Index {
 
           Blank()
 
-          Button('👤 个人中心')
-            .fontSize(13)
-            .height(32)
-            .fontColor(Color.White)
-            .backgroundColor(AppColors.primary)
-            .borderRadius(16)
-            .margin({ right: 8 })
-            .onClick(() => this.goToProfile())
-
-          Button('退出登录')
-            .fontSize(13)
-            .height(32)
+          Button('退出')
+            .fontSize(11)
+            .height(28)
             .fontColor(Color.White)
             .backgroundColor(AppColors.danger)
-            .borderRadius(16)
+            .borderRadius(14)
             .onClick(() => this.logout())
         }
-        .width('85%')
-        .padding({ top: 16, bottom: 4 })
+        .width('100%')
+        .padding({ top: 8, bottom: 2 })
 
-        // 分隔提示
         Text('请选择您的身份')
-          .fontSize(14)
+          .fontSize(12)
           .fontColor(AppColors.textSecondary)
-          .width('85%')
-          .margin({ top: 8, bottom: 4 })
+          .width('100%')
+          .margin({ top: 4, bottom: 2 })
 
-        // 角色卡片 - 按 displayRoles 顺序显示
         ForEach(this.displayRoles, (role: Role) => {
-          Column({ space: 4 }) {
+          Column({ space: 2 }) {
             Text(getRoleEmoji(role))
-              .fontSize(40)
+              .fontSize(24)
             Text(getRoleLabel(role))
-              .fontSize(18)
+              .fontSize(14)
               .fontWeight(FontWeight.Bold)
               .fontColor(AppColors.textPrimary)
             Text(getRoleSubtitle(role))
-              .fontSize(11)
+              .fontSize(10)
               .fontColor(AppColors.textTertiary)
           }
-          .width('80%')
-          .padding(16)
+          .width('100%')
+          .padding(10)
           .backgroundColor(getRoleBgColor(role))
-          .borderRadius(16)
+          .borderRadius(12)
           .onClick(() => this.selectRole(role))
         }, (role: Role) => role.toString())
-
-        Blank()
-          .height(8)
       }
       .width('100%')
-      .height('100%')
-      .backgroundColor(AppColors.bg)
-      .alignItems(HorizontalAlign.Center)
+      .padding({ left: 22, right: 22, top: 8, bottom: 12 })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.bg)
+  }
 
+  @Builder
+  buildLoggedOut() {
+    if (this.isWatch) {
+      this.buildWatchLoggedOut()
     } else {
-      // ===== 未登录状态 =====
-      Column({ space: 16 }) {
-        Text('🌊')
-          .fontSize(56)
-          .margin({ top: 16 })
+      this.buildPhoneLoggedOut()
+    }
+  }
 
-        Text('智慧防汛应急救援系统')
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(AppColors.primary)
-
-        Text('—— 汛安 ——')
-          .fontSize(16)
-          .fontColor(AppColors.textSecondary)
-
-        Text('请登录以继续')
-          .fontSize(14)
-          .fontColor(AppColors.textSecondary)
-          .margin({ top: 8, bottom: 4 })
-
-        Button('登录')
-          .width('80%')
-          .height(48)
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(Color.White)
-          .backgroundColor(AppColors.primary)
-          .borderRadius(24)
-          .onClick(() => this.goToLogin())
-
-        Button('快速求救')
-          .width('80%')
-          .height(48)
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(Color.White)
-          .backgroundColor(AppColors.danger)
-          .borderRadius(24)
-          .onClick(() => this.goToQuickSOS())
-
-        Blank()
-          .height(8)
-      }
-      .width('100%')
-      .height('100%')
-      .backgroundColor(AppColors.bg)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
+  @Builder
+  buildLoggedIn() {
+    if (this.isWatch) {
+      this.buildWatchLoggedIn()
+    } else {
+      this.buildPhoneLoggedIn()
     }
   }
 }

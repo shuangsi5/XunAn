@@ -6,6 +6,7 @@ interface LoginPage_Params {
     password?: string;
     errorMsg?: string;
     isLoading?: boolean;
+    isWatch?: boolean;
 }
 import router from "@ohos:router";
 import promptAction from "@ohos:promptAction";
@@ -13,6 +14,7 @@ import { Role } from "@bundle:com.xunan.floodrescue/entry/ets/model/Role";
 import { loginUser, setLoggedInPhone, setCurrentRole } from "@bundle:com.xunan.floodrescue/entry/ets/utils/ApiService";
 import type { LoginResult } from "@bundle:com.xunan.floodrescue/entry/ets/utils/ApiService";
 import { AppColors } from "@bundle:com.xunan.floodrescue/entry/ets/common/Theme";
+import { isWearable } from "@bundle:com.xunan.floodrescue/entry/ets/common/DeviceAdaptive";
 class LoginPage extends ViewPU {
     constructor(parent, params, __localStorage, elmtId = -1, paramsLambda = undefined, extraInfo) {
         super(parent, __localStorage, elmtId, extraInfo);
@@ -23,6 +25,7 @@ class LoginPage extends ViewPU {
         this.__password = new ObservedPropertySimplePU('', this, "password");
         this.__errorMsg = new ObservedPropertySimplePU('', this, "errorMsg");
         this.__isLoading = new ObservedPropertySimplePU(false, this, "isLoading");
+        this.__isWatch = new ObservedPropertySimplePU(false, this, "isWatch");
         this.setInitiallyProvidedValue(params);
         this.finalizeConstruction();
     }
@@ -39,6 +42,9 @@ class LoginPage extends ViewPU {
         if (params.isLoading !== undefined) {
             this.isLoading = params.isLoading;
         }
+        if (params.isWatch !== undefined) {
+            this.isWatch = params.isWatch;
+        }
     }
     updateStateVars(params: LoginPage_Params) {
     }
@@ -47,12 +53,14 @@ class LoginPage extends ViewPU {
         this.__password.purgeDependencyOnElmtId(rmElmtId);
         this.__errorMsg.purgeDependencyOnElmtId(rmElmtId);
         this.__isLoading.purgeDependencyOnElmtId(rmElmtId);
+        this.__isWatch.purgeDependencyOnElmtId(rmElmtId);
     }
     aboutToBeDeleted() {
         this.__phone.aboutToBeDeleted();
         this.__password.aboutToBeDeleted();
         this.__errorMsg.aboutToBeDeleted();
         this.__isLoading.aboutToBeDeleted();
+        this.__isWatch.aboutToBeDeleted();
         SubscriberManager.Get().delete(this.id__());
         this.aboutToBeDeletedInternal();
     }
@@ -83,6 +91,16 @@ class LoginPage extends ViewPU {
     }
     set isLoading(newValue: boolean) {
         this.__isLoading.set(newValue);
+    }
+    private __isWatch: ObservedPropertySimplePU<boolean>;
+    get isWatch() {
+        return this.__isWatch.get();
+    }
+    set isWatch(newValue: boolean) {
+        this.__isWatch.set(newValue);
+    }
+    aboutToAppear(): void {
+        this.isWatch = isWearable();
     }
     // 根据角色列表决定默认跳转页面
     getDefaultPage(roles: Role[]): string {
@@ -166,6 +184,23 @@ class LoginPage extends ViewPU {
         PageTransition.pop();
     }
     initialRender() {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (this.isWatch) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.buildWatch.bind(this)();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                    this.buildPhone.bind(this)();
+                });
+            }
+        }, If);
+        If.pop();
+    }
+    // ===== 手机/平板 =====
+    buildPhone(parent = null) {
         this.observeComponentCreation2((elmtId, isInitialRender) => {
             Column.create({ space: 16 });
             Column.width('100%');
@@ -311,6 +346,141 @@ class LoginPage extends ViewPU {
         // 注册链接
         Row.pop();
         Column.pop();
+    }
+    // ===== 手表（紧凑 + 可滚动，适配圆形小屏）=====
+    buildWatch(parent = null) {
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Scroll.create();
+            Scroll.width('100%');
+            Scroll.height('100%');
+            Scroll.backgroundColor(AppColors.bg);
+        }, Scroll);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Column.create({ space: 10 });
+            Column.width('100%');
+            Column.constraintSize({ minHeight: '100%' });
+            Column.justifyContent(FlexAlign.Center);
+            Column.padding({ left: 20, right: 20, top: 12, bottom: 12 });
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('🌊');
+            Text.fontSize(28);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('汛安');
+            Text.fontSize(18);
+            Text.fontWeight(FontWeight.Bold);
+            Text.fontColor(AppColors.primary);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('智慧防汛应急救援系统');
+            Text.fontSize(11);
+            Text.fontColor(AppColors.textSecondary);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            // 输入区域卡片
+            Column.create({ space: 8 });
+            // 输入区域卡片
+            Column.width('84%');
+            // 输入区域卡片
+            Column.padding(14);
+            // 输入区域卡片
+            Column.backgroundColor(AppColors.card);
+            // 输入区域卡片
+            Column.borderRadius(16);
+        }, Column);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            TextInput.create({ placeholder: '请输入手机号', text: { value: this.phone, changeEvent: newValue => { this.phone = newValue; } } });
+            TextInput.width('100%');
+            TextInput.height(38);
+            TextInput.fontSize(13);
+            TextInput.type(InputType.Number);
+            TextInput.maxLength(11);
+            TextInput.backgroundColor(AppColors.bgSecondary);
+            TextInput.borderRadius(10);
+            TextInput.padding({ left: 10, right: 10 });
+        }, TextInput);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            TextInput.create({ placeholder: '请输入密码', text: { value: this.password, changeEvent: newValue => { this.password = newValue; } } });
+            TextInput.width('100%');
+            TextInput.height(38);
+            TextInput.fontSize(13);
+            TextInput.type(InputType.Password);
+            TextInput.maxLength(20);
+            TextInput.backgroundColor(AppColors.bgSecondary);
+            TextInput.borderRadius(10);
+            TextInput.padding({ left: 10, right: 10 });
+        }, TextInput);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            If.create();
+            if (this.errorMsg) {
+                this.ifElseBranchUpdateFunction(0, () => {
+                    this.observeComponentCreation2((elmtId, isInitialRender) => {
+                        Text.create(this.errorMsg);
+                        Text.fontSize(11);
+                        Text.fontColor(AppColors.danger);
+                    }, Text);
+                    Text.pop();
+                });
+            }
+            else {
+                this.ifElseBranchUpdateFunction(1, () => {
+                });
+            }
+        }, If);
+        If.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Button.createWithLabel(this.isLoading ? '登录中...' : '登录');
+            Button.width('100%');
+            Button.height(38);
+            Button.fontSize(14);
+            Button.fontWeight(FontWeight.Medium);
+            Button.fontColor(Color.White);
+            Button.backgroundColor(this.isLoading ? '#7BA9FF' : AppColors.primary);
+            Button.borderRadius(19);
+            Button.margin({ top: 2 });
+            Button.enabled(!this.isLoading);
+            Button.onClick(() => this.handleLogin());
+        }, Button);
+        Button.pop();
+        // 输入区域卡片
+        Column.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Button.createWithLabel('快速求救');
+            Button.width('84%');
+            Button.height(38);
+            Button.fontSize(14);
+            Button.fontWeight(FontWeight.Medium);
+            Button.fontColor(Color.White);
+            Button.backgroundColor(AppColors.danger);
+            Button.borderRadius(19);
+            Button.onClick(() => this.handleQuickSOS());
+        }, Button);
+        Button.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Row.create();
+        }, Row);
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('还没有账号？');
+            Text.fontSize(11);
+            Text.fontColor(AppColors.textTertiary);
+        }, Text);
+        Text.pop();
+        this.observeComponentCreation2((elmtId, isInitialRender) => {
+            Text.create('注册账号');
+            Text.fontSize(11);
+            Text.fontColor(AppColors.primary);
+            Text.onClick(() => {
+                router.pushUrl({ url: 'pages/RegisterPage' });
+            });
+        }, Text);
+        Text.pop();
+        Row.pop();
+        Column.pop();
+        Scroll.pop();
     }
     rerender() {
         this.updateDirtyElements();

@@ -1657,15 +1657,27 @@
       ],
       "error": false
     },
+    "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\DeviceAdaptive.ets": {
+      "mtimeMs": 1792804884664.4192,
+      "children": [
+        "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.deviceInfo.d.ts"
+      ],
+      "parent": [
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\Index.ets",
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\LoginPage.ets"
+      ],
+      "error": false
+    },
     "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\Index.ets": {
-      "mtimeMs": 1790067734000,
+      "mtimeMs": 1792804906134.7256,
       "children": [
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.router.d.ts",
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.promptAction.d.ts",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\model\\Role.ets",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\model\\User.ets",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\utils\\ApiService.ets",
-        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\Theme.ets"
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\Theme.ets",
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\DeviceAdaptive.ets"
       ],
       "parent": [],
       "error": true,
@@ -1831,14 +1843,23 @@
       ],
       "error": false
     },
+    "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.deviceInfo.d.ts": {
+      "mtimeMs": 1782438560000,
+      "children": [],
+      "parent": [
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\DeviceAdaptive.ets"
+      ],
+      "error": false
+    },
     "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\LoginPage.ets": {
-      "mtimeMs": 1790067736000,
+      "mtimeMs": 1792805169417.2937,
       "children": [
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.router.d.ts",
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.promptAction.d.ts",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\model\\Role.ets",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\utils\\ApiService.ets",
-        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\Theme.ets"
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\Theme.ets",
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\DeviceAdaptive.ets"
       ],
       "parent": [],
       "error": true,

@@ -2,6 +2,7 @@ import { router, promptAction } from '@kit.ArkUI';
 import { Role } from '../model/Role';
 import { loginUser, LoginResult, setLoggedInPhone, setCurrentRole } from '../utils/ApiService';
 import { AppColors } from '../common/Theme';
+import { isWearable } from '../common/DeviceAdaptive';
 
 @Entry
 @Component
@@ -10,6 +11,11 @@ struct LoginPage {
   @State password: string = '';
   @State errorMsg: string = '';
   @State isLoading: boolean = false;
+  @State isWatch: boolean = false;
+
+  aboutToAppear(): void {
+    this.isWatch = isWearable();
+  }
 
   // 根据角色列表决定默认跳转页面
   getDefaultPage(roles: Role[]): string {
@@ -81,6 +87,16 @@ struct LoginPage {
   }
 
   build() {
+    if (this.isWatch) {
+      this.buildWatch()
+    } else {
+      this.buildPhone()
+    }
+  }
+
+  // ===== 手机/平板 =====
+  @Builder
+  buildPhone() {
     Column({ space: 16 }) {
       // 品牌标识
       Text('🌊')
@@ -171,5 +187,99 @@ struct LoginPage {
     .backgroundColor(AppColors.bg)
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
+  }
+
+  // ===== 手表（紧凑 + 可滚动，适配圆形小屏）=====
+  @Builder
+  buildWatch() {
+    Scroll() {
+      Column({ space: 10 }) {
+        Text('🌊')
+          .fontSize(28)
+
+        Text('汛安')
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(AppColors.primary)
+
+        Text('智慧防汛应急救援系统')
+          .fontSize(11)
+          .fontColor(AppColors.textSecondary)
+
+        // 输入区域卡片
+        Column({ space: 8 }) {
+          TextInput({ placeholder: '请输入手机号', text: $$this.phone })
+            .width('100%')
+            .height(38)
+            .fontSize(13)
+            .type(InputType.Number)
+            .maxLength(11)
+            .backgroundColor(AppColors.bgSecondary)
+            .borderRadius(10)
+            .padding({ left: 10, right: 10 })
+
+          TextInput({ placeholder: '请输入密码', text: $$this.password })
+            .width('100%')
+            .height(38)
+            .fontSize(13)
+            .type(InputType.Password)
+            .maxLength(20)
+            .backgroundColor(AppColors.bgSecondary)
+            .borderRadius(10)
+            .padding({ left: 10, right: 10 })
+
+          if (this.errorMsg) {
+            Text(this.errorMsg)
+              .fontSize(11)
+              .fontColor(AppColors.danger)
+          }
+
+          Button(this.isLoading ? '登录中...' : '登录')
+            .width('100%')
+            .height(38)
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(Color.White)
+            .backgroundColor(this.isLoading ? '#7BA9FF' : AppColors.primary)
+            .borderRadius(19)
+            .margin({ top: 2 })
+            .enabled(!this.isLoading)
+            .onClick(() => this.handleLogin())
+        }
+        .width('84%')
+        .padding(14)
+        .backgroundColor(AppColors.card)
+        .borderRadius(16)
+
+        Button('快速求救')
+          .width('84%')
+          .height(38)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(Color.White)
+          .backgroundColor(AppColors.danger)
+          .borderRadius(19)
+          .onClick(() => this.handleQuickSOS())
+
+        Row() {
+          Text('还没有账号？')
+            .fontSize(11)
+            .fontColor(AppColors.textTertiary)
+          Text('注册账号')
+            .fontSize(11)
+            .fontColor(AppColors.primary)
+            .onClick(() => {
+              router.pushUrl({ url: 'pages/RegisterPage' });
+            })
+        }
+      }
+      .width('100%')
+      .constraintSize({ minHeight: '100%' })
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 20, right: 20, top: 12, bottom: 12 })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(AppColors.bg)
   }
 }
