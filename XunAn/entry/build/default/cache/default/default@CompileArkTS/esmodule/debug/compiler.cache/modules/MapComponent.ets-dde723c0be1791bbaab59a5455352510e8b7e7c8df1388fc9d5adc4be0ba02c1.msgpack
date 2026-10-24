@@ -247,7 +247,7 @@ export class MapComponent extends ViewPU {
         this.updateDirtyElements();
     }
 }
-//# sourceMappingURL=MapComponent.js.mapÂ‘ÙX hvigor_ignore_D:_DevEco Studio_sdk_default_hms_ets_api_@hms.core.map.MapComponent.d.etsÙ^C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entry\src\main\ets\components\MapComponent.etsÔrB›ªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo¯hostModulesInfo°belongModulePath¬shouldEmitJs¥entryÃÂÙ5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÙ/C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn¥entry¥1.0.0Ô  ‘ÔrC’²hostDependencyName®hostModuleNameº../components/MapComponent¥entryÙ5C:\Users\LENOVO\Desktop\app\bigWork\XunAn\XunAn\entryÃÃÚ‰import { MapComponent as HMSMap, map, mapCommon } from '@kit.MapKit';
+//# sourceMappingURL=MapComponent.js.mapÂ‘Ùf hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_hms_ets_api_@hms.core.map.MapComponent.d.etsÙEE:\develop\XunAn\XunAn\entry\src\main\ets\components\MapComponent.etsÔrB›ªmoduleName±isLocalDependency¯isNodeEntryFile§pkgPath±belongProjectPath§pkgNameªpkgVersion±dependencyPkgInfo¯hostModulesInfo°belongModulePath¬shouldEmitJs¥entryÃÂ¼E:\develop\XunAn\XunAn\entry¶E:\develop\XunAn\XunAn¥entry¥1.0.0Ô  ‘ÔrC’²hostDependencyName®hostModuleNameº../components/MapComponent¥entry¼E:\develop\XunAn\XunAn\entryÃÃÚ‰import { MapComponent as HMSMap, map, mapCommon } from '@kit.MapKit';
 import { MapMarker, MapPolyline } from '../model/MapTypes';
 
 @Component
@@ -354,7 +354,7 @@ export struct MapComponent {
     .height('100%')
   }
 }
-ÀÔrD‘º@hms.core.map.MapComponentÔrE—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙX hvigor_ignore_D:_DevEco Studio_sdk_default_hms_ets_api_@hms.core.map.MapComponent.d.etsÔrF‘¯hostModulesInfo‘Cº@hms.core.map.MapComponent¥entryÃªoh-resolveÂ“ÔrG–§version¤fileªsourceRoot§sources¥names¨mappings¯MapComponent.js ‘°MapComponent.etsÜ õš”    ”  	”	  ”  ”  ”  ”!  ”'  7”ÌC  ÌD”ÌD  ÌE””   ” ” ” ‘”  ‘” ;’” :”! <’”! Ì@”# ÌB’”) %”. *’”" ”) $’”" 	”* 	%’”! 
+ÀÔrD‘º@hms.core.map.MapComponentÔrE—ªassertions¨external¢id¤meta±moduleSideEffectsªresolvedByµsyntheticNamedExportsAÃÙf hvigor_ignore_E:_DevEco_Studio_DevEco Studio_sdk_default_hms_ets_api_@hms.core.map.MapComponent.d.etsÔrF‘¯hostModulesInfo‘Cº@hms.core.map.MapComponent¥entryÃªoh-resolveÂ“ÔrG–§version¤fileªsourceRoot§sources¥names¨mappings¯MapComponent.js ‘°MapComponent.etsÜ õš”    ”  	”	  ”  ”  ”  ”!  ”'  7”ÌC  ÌD”ÌD  ÌE””   ” ” ” ‘”  ‘” ;’” :”! <’”! Ì@”# ÌB’”) %”. *’”" ”) $’”" 	”* 	%’”! 
 ”# 
 ’”$ #”+ *’”& %”/ .’”. ”? ’”' ”1 ’”' 	”1 	’”& 
 ”/ 
