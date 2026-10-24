@@ -9,6 +9,7 @@ interface AiChatPage_Params {
     scroller?: Scroller;
 }
 import router from "@ohos:router";
+import type { KeyboardAvoidMode } from "@ohos:arkui.UIContext";
 import { chatWithAi } from "@bundle:com.xunan.floodrescue/entry/ets/utils/ApiService";
 import type { ChatMessageItem } from "@bundle:com.xunan.floodrescue/entry/ets/utils/ApiService";
 import { AppColors } from "@bundle:com.xunan.floodrescue/entry/ets/common/Theme";
@@ -87,6 +88,10 @@ class AiChatPage extends ViewPU {
     private scroller: Scroller;
     scrollToBottom(): void {
         this.scroller.scrollEdge(Edge.Bottom);
+    }
+    aboutToAppear(): void {
+        // 键盘弹出时压缩页面高度而非整体上移，避免标题栏被顶出屏幕、输入框被键盘遮挡
+        this.getUIContext().setKeyboardAvoidMode(1);
     }
     async send(): Promise<void> {
         const text = this.inputText.trim();
@@ -414,14 +419,13 @@ class AiChatPage extends ViewPU {
             Row.padding({ left: 16, right: 16, top: 8, bottom: 16 });
         }, Row);
         this.observeComponentCreation2((elmtId, isInitialRender) => {
-            TextInput.create({ placeholder: '请输入您的问题...', text: this.inputText });
+            TextInput.create({ placeholder: '请输入您的问题...', text: { value: this.inputText, changeEvent: newValue => { this.inputText = newValue; } } });
             TextInput.layoutWeight(1);
             TextInput.height(44);
             TextInput.fontSize(14);
             TextInput.backgroundColor(AppColors.bgSecondary);
             TextInput.borderRadius(22);
             TextInput.padding({ left: 16, right: 16 });
-            TextInput.onChange((value: string) => { this.inputText = value; });
             TextInput.onSubmit(() => { this.send(); });
         }, TextInput);
         this.observeComponentCreation2((elmtId, isInitialRender) => {

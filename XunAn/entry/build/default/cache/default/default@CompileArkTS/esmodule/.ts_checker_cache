@@ -3312,7 +3312,8 @@
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\arkui\\ComponentContent.d.ts",
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\arkui\\NodeController.d.ts",
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\arkui\\XComponentNode.d.ts",
-        "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader\\declarations\\common.d.ts"
+        "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\build-tools\\ets-loader\\declarations\\common.d.ts",
+        "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\AiChatPage.ets"
       ],
       "error": false
     },
@@ -4392,7 +4393,7 @@
       "error": false
     },
     "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\utils\\ApiService.ets": {
-      "mtimeMs": 1792754324993.0686,
+      "mtimeMs": 1792763140751.9673,
       "children": [
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.net.http.d.ts",
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.abilityAccessCtrl.d.ts",
@@ -5121,9 +5122,10 @@
       ]
     },
     "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\pages\\AiChatPage.ets": {
-      "mtimeMs": 1792741245448.0835,
+      "mtimeMs": 1792763051737.334,
       "children": [
         "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.router.d.ts",
+        "E:\\DevEco_Studio\\DevEco Studio\\sdk\\default\\openharmony\\ets\\api\\@ohos.arkui.UIContext.d.ts",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\utils\\ApiService.ets",
         "E:\\develop\\XunAn\\XunAn\\entry\\src\\main\\ets\\common\\Theme.ets"
       ],
