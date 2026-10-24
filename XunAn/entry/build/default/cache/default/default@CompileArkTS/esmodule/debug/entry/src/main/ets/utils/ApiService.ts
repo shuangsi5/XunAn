@@ -88,7 +88,7 @@ interface UpdateUserBody {
     avatarUrl?: string;
 }
 // ===================== 后端 API 地址 =====================
-const BASE_URL = 'http://42.121.114.11:3000/api';
+const BASE_URL = 'http://47.110.87.84:3000/api';
 // 本地测试
 //const BASE_URL = 'http://10.0.2.2:3000/api';
 // ===================== 会话 Key =====================
@@ -108,7 +108,7 @@ interface ErrorResponse {
 }
 type ApiResponse = SuccessResponse | ErrorResponse;
 // ===================== HTTP 请求辅助 =====================
-async function request(method: http.RequestMethod, path: string, body?: object): Promise<ApiResponse> {
+async function request(method: http.RequestMethod, path: string, body?: object, readTimeoutMs: number = 10000): Promise<ApiResponse> {
     const httpRequest = http.createHttp();
     try {
         const opts: http.HttpRequestOptions = {
@@ -116,7 +116,7 @@ async function request(method: http.RequestMethod, path: string, body?: object):
             header: { 'Content-Type': 'application/json' },
             expectDataType: http.HttpDataType.STRING,
             connectTimeout: 10000,
-            readTimeout: 10000
+            readTimeout: readTimeoutMs
         };
         if (body) {
             opts.extraData = JSON.stringify(body);
@@ -137,8 +137,8 @@ async function request(method: http.RequestMethod, path: string, body?: object):
 async function get(path: string): Promise<ApiResponse> {
     return request(http.RequestMethod.GET, path);
 }
-async function post(path: string, body?: object): Promise<ApiResponse> {
-    return request(http.RequestMethod.POST, path, body);
+async function post(path: string, body?: object, readTimeoutMs: number = 10000): Promise<ApiResponse> {
+    return request(http.RequestMethod.POST, path, body, readTimeoutMs);
 }
 async function put(path: string, body?: object): Promise<ApiResponse> {
     return request(http.RequestMethod.PUT, path, body);
@@ -336,7 +336,8 @@ interface ChatRequestBody {
 }
 export async function chatWithAi(messages: ChatMessageItem[]): Promise<string> {
     const body: ChatRequestBody = { messages: messages };
-    const result: ApiResponse = await post('/ai/chat', body);
+    // AI 推理耗时较长，超时放宽到 60s，避免长回答被 10s 默认超时截断
+    const result: ApiResponse = await post('/ai/chat', body, 60000);
     if (result.success === true && result.data) {
         const data = result.data as AiChatResponse;
         return data.content || '';

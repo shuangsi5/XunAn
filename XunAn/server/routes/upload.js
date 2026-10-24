@@ -37,7 +37,7 @@ router.post('/', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: '没有上传文件' });
   }
-  const url = `http://42.121.114.11:3000/uploads/${req.file.filename}`;
+  const url = `http://47.110.87.84:3000/uploads/${req.file.filename}`;
   res.json({ success: true, url, filename: req.file.filename });
 });
 
@@ -59,7 +59,7 @@ router.post('/base64', express.json({ limit: '15mb' }), (req, res) => {
     const filePath = path.join(uploadDir, uniqueName);
     fs.writeFileSync(filePath, buffer);
 
-    const url = `http://42.121.114.11:3000/uploads/${uniqueName}`;
+    const url = `http://47.110.87.84:3000/uploads/${uniqueName}`;
     res.json({ success: true, url, filename: uniqueName });
   } catch (err) {
     console.error('Base64 上传失败:', err);

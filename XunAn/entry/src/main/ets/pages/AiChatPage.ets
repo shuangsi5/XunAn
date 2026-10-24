@@ -1,4 +1,4 @@
-import { router } from '@kit.ArkUI';
+import { router, KeyboardAvoidMode } from '@kit.ArkUI';
 import { chatWithAi, ChatMessageItem } from '../utils/ApiService';
 import { AppColors } from '../common/Theme';
 
@@ -19,6 +19,11 @@ struct AiChatPage {
 
   scrollToBottom(): void {
     this.scroller.scrollEdge(Edge.Bottom);
+  }
+
+  aboutToAppear(): void {
+    // 键盘弹出时压缩页面高度而非整体上移，避免标题栏被顶出屏幕、输入框被键盘遮挡
+    this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
   }
 
   async send(): Promise<void> {
@@ -183,14 +188,13 @@ struct AiChatPage {
 
       // 输入栏
       Row({ space: 8 }) {
-        TextInput({ placeholder: '请输入您的问题...', text: this.inputText })
+        TextInput({ placeholder: '请输入您的问题...', text: $$this.inputText })
           .layoutWeight(1)
           .height(44)
           .fontSize(14)
           .backgroundColor(AppColors.bgSecondary)
           .borderRadius(22)
           .padding({ left: 16, right: 16 })
-          .onChange((value: string) => { this.inputText = value; })
           .onSubmit(() => { this.send(); })
 
         Button(this.isLoading ? '…' : '发送')
